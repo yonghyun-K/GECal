@@ -16,6 +16,7 @@ library(GECal)
 
 ## Example commands
 ``` r
+# install.packages("sampling") # Install "sampling" if it is unavailable.
 library(sampling)
 library(GECal)
 
