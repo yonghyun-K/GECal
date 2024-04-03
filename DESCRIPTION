@@ -1,0 +1,14 @@
+Package: GECal
+Type: Package
+Title: Generalized Entropy Calibration (Title Case)
+Version: 0.1.0
+Author: Yonghyun Kwon
+Maintainer: Yonghyun Kwon <yhkwon@iastate.edu>
+Description: More about what it does (maybe more than one line)
+    Use four spaces when indenting paragraphs within the Description.
+License: What license is it under?
+Encoding: UTF-8
+LazyData: true
+Imports:
+  nleqslv
+RoxygenNote: 7.3.1
