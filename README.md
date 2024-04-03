@@ -1,4 +1,4 @@
-# GECal
+# GCal
 
 Generalized Entropy Calibration produces calibration weights based on generalized entropy as the objective function for optimization. In GECcal, design weights play a role in the constraints to ensure design consistency, rather than being part of the objective function.
 
