@@ -8,8 +8,8 @@ Generalized Entropy Calibration produces calibration weights based on generalize
 ## Installation
 
 ``` r
-library(devtools)
-install_github("yonghyun-K/GECal", dependencies = T)
+# install.packages("devtools") # Install "devtools" if it is unavailable.
+devtools::install_github("yonghyun-K/GECal", dependencies = T)
 
 library(GECal)
 ```
