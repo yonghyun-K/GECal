@@ -1,4 +1,5 @@
-# library(sampling)
+library(sampling)
+library(GECal)
 
 ############
 ## Example 1
