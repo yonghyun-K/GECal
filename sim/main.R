@@ -47,58 +47,53 @@ registerDoParallel(cl)
 modelcases = expand.grid(c(T))
 rnames <- c("C")
 
-# theta = 210
-
-# Kang & Schafer, 2007
-n = 1000
-pcol = 4; # pcol = 4 is True
-x = matrix(rnorm(n * pcol, 0, 1), nc= pcol)
-z = cbind(exp(x[,1] /  2), x[,2] / (1 + exp(x[,1])) + 10,
-          (x[,1] * x[,3] / 25 + 0.6)^3, (x[,2] + x[,4] + 20)^2) # True
-
-# z = cbind(exp(x[,1] /  2), 1 / (1 + exp(x[,2])) + 10,
-#           (x[,1] * x[,3] / 25 + 0.6)^3, (x[,2] + x[,4] + 20)^2) # To be removed
-
-# z = cbind((x[,1] + 1)^2, (x[,2] + 1)^2, (x[,3] + 1)^2, (x[,4] + 1)^2) # To be removed
-
-# pi = 1 / (1 + exp(-(-0.5 * x[,1] + 0.25 * x[,2] - 3)))
-
+# # Kang & Schafer, 2007
+# n = 1000
+# pcol = 4; # pcol = 4 is True
+# x = matrix(rnorm(n * pcol, 0, 1), nc= pcol)
+# 
 # pi = 1 / (1 + exp(-(-x[,1] + 0.5 * x[,2] -
-#                       0.25 * x[,3] - 0.1 * x[,4] - 2.5)))
-
-pi = 1 / (1 + exp(-(-x[,1] + 0.5 * x[,2] -
-                      0.25 * x[,3] - 0.1 * x[,4]))) # True
-
-# pi = ifelse(pi < 0.1, .1, pi) # To be removed
-
-# pi = runif(n, 0, 1) # To be removed
-
-# VM = T
-# if(VM == T){
-#   vx = rep(160, n)
-# }else{
-# vx = (x[,1]^2 + exp(x[,3]) / 1.65) * 80
-
+#                       0.25 * x[,3] - 0.1 * x[,4]))) # True
+# # pi = runif(n, 0, 1) # To be removed
+# # pi = rep(0.3, n) # To be removed
+# 
+# 
+# # vx = (x[,1]^2 + exp(x[,3]) / 1.65) * 80
 vx = exp(x[,1] / 2 + x[,3]) * 70
-# summary(vx)
-#   # vx = ifelse(x[,1]^2 > 2, 2, x[,1]^2)
-# }
-# vx = rep(500, n)
-# vx = rep(160, n)
+# # vx = rep(1, n) # To be removed
+# 
+# e = rnorm(n, 0, sqrt(vx))
+# 
+# y = 210 + 27.4 * x[,1] + 13.7 * x[,2] +
+#   13.7 * x[,3]+ 13.7 * x[,4] + e
+# 
+# theta = sum(y)
+# 
+# # pi = 1 / (1 + exp(-(-x[,1] + 0.5 * x[,2] -
+# #                       0.25 * x[,3] - 0.1 * x[,4] - e / 40)))
+
+# Additional simulation study
+n = 5000
+pcol = 3; # pcol = 4 is True
+x = matrix(rnorm(n * pcol, 2, 1), nc= pcol)
+
+# vx = (x[,1]^2 + exp(x[,3]) / 1.65) * 80
+vx = exp(-x[,1] + x[,3])
 # vx = rep(1, n) # To be removed
+
 e = rnorm(n, 0, sqrt(vx))
 
-y = 210 + 27.4 * x[,1] + 13.7 * x[,2] +
-  13.7 * x[,3]+ 13.7 * x[,4] + e
+y = 2 + 1 * x[,1] + 2 * x[,2] + 3 * x[,3] + e
 
-# sqrt((27.4^2 + 13.7^2 * 3 + mean(vx / pi)) / n)
+# sd(e); sd(y - e)
 
-# pi = 1 / (1 + exp(-(-x[,1] + 0.5 * x[,2] -
-#                       0.25 * x[,3] - 0.1 * x[,4] - e / 40)))
+pi = 1 / (1 + exp(-(0.1 * x[,1] - 0.1 * x[,2] - 0.2 * x[,3]))) # True
+# pi = runif(n, 0, 1) # To be removed
+# pi = rep(0.3, n) # To be removed
 
-theta = mean(y)
-# y = theta + 27.4 * x[,1] + 13.7 * x[,2] +
-#   13.7 * x[,3]+ 13.7 * x[,4] + e + 50*(sqrt(pi) - 2/ 3) # To be removed
+theta = sum(y)
+mean(pi)
+
 
 final_res <- foreach(
   simnum = 1:SIMNUM, 
@@ -114,7 +109,7 @@ final_res <- foreach(
       # VM = modelcases[cnt, 3]
       
       # Simulation setup of
-
+      
       
       theta_res = NULL
       var_res = NULL
@@ -125,29 +120,30 @@ final_res <- foreach(
       
       y_S = y[Index_S]
       x_S = x[Index_S,]
-      z_S = z[Index_S,]
       
       del = NA
       type = "EL"
       
-      data = data.frame(y, delta, vx = vx, x = x, z = z)
+      data = data.frame(y, delta, vx = vx, x = x, pi = pi)
       data_S = data[Index_S,]
       
-      theta_res = c(theta_res, Hajek = sum(y_S / pi[Index_S]) / sum(1 / pi[Index_S]))  # Hajek
+      theta_res = c(theta_res, Hajek = sum(y_S / pi[Index_S]) / sum(1 / pi[Index_S]) * n)  # Hajek
       
       Omodel = lm(reformulate(paste0("x.", 1:pcol), response = "y"), data = data_S)
       yhat = predict.lm(Omodel, data, type = "response")
-      theta_res = c(theta_res, GREG0 = (sum(yhat) + sum((y_S - yhat[Index_S]) / pi[Index_S])) / n) # GREG
+      theta_res = c(theta_res, GREG0 = sum(yhat) + sum((y_S - yhat[Index_S]) / pi[Index_S])) # GREG
       
-      Omodel = lm(reformulate(paste0("x.", 1:pcol), response = "y"), weights = 1 / pi[Index_S], data = data_S)
+      Omodel = lm(reformulate(paste0("x.", 1:pcol), response = "y"), weights = 1 / pi, data = data_S)
       yhat = predict.lm(Omodel, data, type = "response")
-      theta_res = c(theta_res, GREG1 = (sum(yhat) + sum((y_S - yhat[Index_S]) / pi[Index_S])) / n) # GREG
+      theta_res = c(theta_res, GREG1 = sum(yhat) + sum((y_S - yhat[Index_S]) / pi[Index_S])) # GREG
       
       Omodel = lm(reformulate(paste0("x.", 1:pcol), response = "y"), weights = 1 / vx, data = data_S)
       yhat = predict.lm(Omodel, data, type = "response")
-      theta_res = c(theta_res, GREG2 = (sum(yhat) + sum((y_S - yhat[Index_S]) / pi[Index_S])) / n) # GREG
+      theta_res = c(theta_res, GREG2 = sum(yhat) + sum((y_S - yhat[Index_S]) / pi[Index_S])) # GREG
       
-
+      
+      # solve(t(cbind(1, x_S)) %*% (cbind(1, x_S) / pi[Index_S]), t(cbind(1, x_S)) %*% (y_S / pi[Index_S]))
+      # c(cbind(1, x) %*% solve(t(cbind(1, x_S)) %*% (cbind(1, x_S) / vx[Index_S]), t(cbind(1, x_S)) %*% (y_S / vx[Index_S]))) - yhat
       
       # var_res = c(var_res, AIPW = var(eta) / n)
       
@@ -298,7 +294,7 @@ final_res <- foreach(
       
       w_S0 = w_S
       
-      theta_res = c(theta_res, EL1 = sum(y_S * w_S) / n) # EL1
+      theta_res = c(theta_res, EL1 = sum(y_S * w_S)) # EL1
       # var_res = c(var_res, EL0 = var(eta) / n)
       
       
@@ -320,7 +316,7 @@ final_res <- foreach(
         w_S = f(nleqslv_res$x, d_S = d_S, v_S = v_S, Z_S = Z_S, Zbar = Zbar, type = "EL", del = del, n = n, returnw = T)             
       }
       
-      theta_res = c(theta_res, EL2 = sum(y_S * w_S) / n) # EL2
+      theta_res = c(theta_res, EL2 = sum(y_S * w_S)) # EL2
       
       d_S = rep(1, sum(delta)); #u_vec = -pi # EL3
       v_S = vx[Index_S]; u_vec = -vx / pi # EL3
@@ -340,7 +336,7 @@ final_res <- foreach(
         w_S = f(nleqslv_res$x, d_S = d_S, v_S = v_S / pi[Index_S]^2, Z_S = Z_S, Zbar = Zbar, type = "EL", del = del, n = n, returnw = T)             
       }
       
-      theta_res = c(theta_res, EL3 = sum(y_S * w_S) / n) # EL3
+      theta_res = c(theta_res, EL3 = sum(y_S * w_S)) # EL3
       
       
       Omodel_d = lm(reformulate(paste0("x.", 1:pcol), response = "y"), weights = 1 / pi[Index_S], data = data_S)
@@ -349,7 +345,7 @@ final_res <- foreach(
       data = cbind(data, e2 = (yhat_d - y)^2); data_S = data[Index_S,]
       
       Vmodel_d = glm(reformulate(paste0("x.", 1:pcol), response = "e2"), family = gaussian(link = "log"),
-          weights = 1 / pi[Index_S], data = data_S)
+                     weights = 1 / pi[Index_S], data = data_S)
       vhat = predict.glm(Vmodel_d, data, type = "response")
       
       
@@ -371,7 +367,7 @@ final_res <- foreach(
         w_S = f(nleqslv_res$x, d_S = d_S, v_S = v_S, Z_S = Z_S, Zbar = Zbar, type = "EL", del = del, n = n, returnw = T)             
       }
       
-      theta_res = c(theta_res, EL4 = sum(y_S * w_S) / n) # EL2
+      theta_res = c(theta_res, EL4 = sum(y_S * w_S)) # EL2
       
       d_S = rep(1, sum(delta)); #u_vec = -pi # EL3
       v_S = vhat[Index_S]; u_vec = -vhat / pi # EL3
@@ -391,7 +387,7 @@ final_res <- foreach(
         w_S = f(nleqslv_res$x, d_S = d_S, v_S = v_S / pi[Index_S]^2, Z_S = Z_S, Zbar = Zbar, type = "EL", del = del, n = n, returnw = T)             
       }
       
-      theta_res = c(theta_res, EL5 = sum(y_S * w_S) / n) # EL3
+      theta_res = c(theta_res, EL5 = sum(y_S * w_S)) # EL3
       
       # glm(vx ~ x.1 + x.2 + x.3 + x.4, family = gaussian(link = "log"),
       #     weights = 1 / pi[Index_S], data = data_S)
