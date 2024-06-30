@@ -19,9 +19,10 @@ library(nleqslv)
 library(CVXR)
 suppressMessages(library(foreach))
 suppressMessages(library(doParallel))
-library(caret)
+# library(caret)
 library(tidyverse)
-library(kableExtra)
+library(xtable)
+# library(kableExtra)
 
 set.seed(11)
 SIMNUM = args[1]
@@ -83,13 +84,13 @@ vx = exp(-x[,1] + x[,3])
 
 e = rnorm(n, 0, sqrt(vx))
 
-y = 2 + 1 * x[,1] + 2 * x[,2] + 3 * x[,3] + e; print("OR Model 1") # Model 1
-# y = 2 + x[,1]^2 + + exp(x[,2]) + e; print("OR Model 2") # Model 2
+# y = 2 + 1 * x[,1] + 2 * x[,2] + 3 * x[,3] + e; print("OR Model 1") # Model 1
+y = 2 + x[,1]^2 + + exp(x[,2]) + e; print("OR Model 2") # Model 2
 
 # sd(e); sd(y - e)
 
-pi = 1 / (1 + exp(-(0.1 * x[,1] - 0.1 * x[,2] - 0.2 * x[,3]))); print("RM Model 1") # Model 1
-# pi = 1 / (1 + exp(-(-0.1 * x[,1] + 0.1 * e))); print("RM Model 2") # Model 2
+# pi = 1 / (1 + exp(-(0.1 * x[,1] - 0.1 * x[,2] - 0.2 * x[,3]))); print("RM Model 1") # Model 1
+pi = 1 / (1 + exp(-(-0.1 * x[,1] + 0.1 * e))); print("RM Model 2") # Model 2
 # pi = runif(n, 0, 1) # To be removed
 # pi = rep(0.3, n) # To be removed
 
