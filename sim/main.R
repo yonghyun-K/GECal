@@ -6,7 +6,7 @@
 if(!interactive()){
   args <- as.numeric(commandArgs(trailingOnly = TRUE))
 }else{
-  args <- c(50)
+  args <- c(500)
 }
 
 timenow1 = Sys.time()
@@ -100,7 +100,7 @@ mean(pi)
 
 final_res <- foreach(
   simnum = 1:SIMNUM, 
-  .packages = c("nleqslv", "CVXR", "caret"),
+  .packages = c("nleqslv", "CVXR"),
   .errorhandling="pass") %dopar% {
     theta_mat = NULL
     var_mat = NULL; var_mat2 = NULL
@@ -502,5 +502,5 @@ res2 = cbind(RB1 = (colMeans(tmpres2, na.rm = TRUE) - SE^2) / SE^2, CR1 = colMea
       RB2 = (colMeans(tmpres3, na.rm = TRUE) - SE^2) / SE^2, CR2 = colMeans(tmpres5, na.rm = TRUE))
 rownames(res2) = row.names(final_res1[[1]])
 
-xtable::xtable(cbind(res, res2), digits = 4)
+xtable::xtable(cbind(res, res2), digits = 3)
 # res2
