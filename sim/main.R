@@ -6,7 +6,7 @@
 if(!interactive()){
   args <- as.numeric(commandArgs(trailingOnly = TRUE))
 }else{
-  args <- c(1000)
+  args <- c(50)
 }
 
 timenow1 = Sys.time()
@@ -59,7 +59,7 @@ rnames <- c("C")
 # 
 # 
 # # vx = (x[,1]^2 + exp(x[,3]) / 1.65) * 80
-vx = exp(x[,1] / 2 + x[,3]) * 70
+# vx = exp(x[,1] / 2 + x[,3]) * 70
 # # vx = rep(1, n) # To be removed
 # 
 # e = rnorm(n, 0, sqrt(vx))
@@ -83,11 +83,13 @@ vx = exp(-x[,1] + x[,3])
 
 e = rnorm(n, 0, sqrt(vx))
 
-y = 2 + 1 * x[,1] + 2 * x[,2] + 3 * x[,3] + e
+y = 2 + 1 * x[,1] + 2 * x[,2] + 3 * x[,3] + e; print("OR Model 1") # Model 1
+# y = 2 + x[,1]^2 + + exp(x[,2]) + e; print("OR Model 2") # Model 2
 
 # sd(e); sd(y - e)
 
-pi = 1 / (1 + exp(-(0.1 * x[,1] - 0.1 * x[,2] - 0.2 * x[,3]))) # True
+pi = 1 / (1 + exp(-(0.1 * x[,1] - 0.1 * x[,2] - 0.2 * x[,3]))); print("RM Model 1") # Model 1
+# pi = 1 / (1 + exp(-(-0.1 * x[,1] + 0.1 * e))); print("RM Model 2") # Model 2
 # pi = runif(n, 0, 1) # To be removed
 # pi = rep(0.3, n) # To be removed
 
@@ -100,8 +102,8 @@ final_res <- foreach(
   .packages = c("nleqslv", "CVXR", "caret"),
   .errorhandling="pass") %dopar% {
     theta_mat = NULL
-    var_mat = NULL
-    CR_mat = NULL
+    var_mat = NULL; var_mat2 = NULL
+    CR_mat = NULL; CR_mat2 = NULL
     alpha_vec = NULL
     for(cnt in 1:nrow(modelcases)){
       # RM = modelcases[cnt, 1]
@@ -112,7 +114,7 @@ final_res <- foreach(
       
       
       theta_res = NULL
-      var_res = NULL
+      var_res = NULL; var_res2 = NULL
       CR_res = NULL
       
       delta = rbinom(n, 1, pi)
@@ -122,24 +124,30 @@ final_res <- foreach(
       x_S = x[Index_S,]
       
       del = NA
-      type = "EL"
+      # type = "EL"
       
       data = data.frame(y, delta, vx = vx, x = x, pi = pi)
       data_S = data[Index_S,]
       
-      theta_res = c(theta_res, Hajek = sum(y_S / pi[Index_S]) / sum(1 / pi[Index_S]) * n)  # Hajek
+      theta_Hajek = sum(y_S / pi[Index_S]) / sum(1 / pi[Index_S]) * n
       
-      Omodel = lm(reformulate(paste0("x.", 1:pcol), response = "y"), data = data_S)
-      yhat = predict.lm(Omodel, data, type = "response")
-      theta_res = c(theta_res, GREG0 = sum(yhat) + sum((y_S - yhat[Index_S]) / pi[Index_S])) # GREG
+      theta_res = c(theta_res, Hajek = theta_Hajek)  # Hajek
       
-      Omodel = lm(reformulate(paste0("x.", 1:pcol), response = "y"), weights = 1 / pi, data = data_S)
-      yhat = predict.lm(Omodel, data, type = "response")
-      theta_res = c(theta_res, GREG1 = sum(yhat) + sum((y_S - yhat[Index_S]) / pi[Index_S])) # GREG
+      var1 = sum((y_S - theta_Hajek / n)^2 / pi[Index_S] * (1 / pi[Index_S] - 1))
+      var_res = c(var_res, Hajek = var1)
+      var_res2 = c(var_res2, Hajek = var1)
       
-      Omodel = lm(reformulate(paste0("x.", 1:pcol), response = "y"), weights = 1 / vx, data = data_S)
-      yhat = predict.lm(Omodel, data, type = "response")
-      theta_res = c(theta_res, GREG2 = sum(yhat) + sum((y_S - yhat[Index_S]) / pi[Index_S])) # GREG
+      # Omodel = lm(reformulate(paste0("x.", 1:pcol), response = "y"), data = data_S)
+      # yhat = predict.lm(Omodel, data, type = "response")
+      # theta_res = c(theta_res, GREG0 = sum(yhat) + sum((y_S - yhat[Index_S]) / pi[Index_S])) # GREG0
+      # 
+      # Omodel = lm(reformulate(paste0("x.", 1:pcol), response = "y"), weights = 1 / pi, data = data_S)
+      # yhat = predict.lm(Omodel, data, type = "response")
+      # theta_res = c(theta_res, GREG1 = sum(yhat) + sum((y_S - yhat[Index_S]) / pi[Index_S])) # GREG1
+      # 
+      # Omodel = lm(reformulate(paste0("x.", 1:pcol), response = "y"), weights = 1 / vx, data = data_S)
+      # yhat = predict.lm(Omodel, data, type = "response")
+      # theta_res = c(theta_res, GREG2 = sum(yhat) + sum((y_S - yhat[Index_S]) / pi[Index_S])) # GREG2
       
       
       # solve(t(cbind(1, x_S)) %*% (cbind(1, x_S) / pi[Index_S]), t(cbind(1, x_S)) %*% (y_S / pi[Index_S]))
@@ -273,122 +281,132 @@ final_res <- foreach(
       # }
       # 
       # theta_res = c(theta_res, Reg = sum(y_S * w_S) / n) # Reg
-      
-      d_S = rep(1, sum(delta)); 
-      v_S = rep(1, sum(delta)); u_vec = -pi # EL1
-      u_vec_S = u_vec[Index_S]; Uhat = mean(u_vec); 
-      Z_S = cbind(1, x_S, u_vec_S); Zbar = c(1, colMeans(x), Uhat); Z_St = t(Z_S)
-      
-      init = rep(0, length(Zbar)); init[length(init)] = 1
-      
-      nleqslv_res = nleqslv(init, f, jac = h, d_S = d_S, v_S = v_S, Z_S = Z_S, 
-                            Z_St = Z_St, Zbar = Zbar, type = "EL", del = del, n = n,
-                            method = "Newton", control = list(maxit = 1e5, allowSingular = T),
-                            xscalm = "auto")
-      if(nleqslv_res$termcd != 1){
-        if(max(abs(f(nleqslv_res$x, d_S = d_S, v_S = v_S, Z_S = Z_S, Zbar = Zbar, type = "EL", del = del, n = n))) > 1e-5)
-          w_S = NA
-      }else{
-        w_S = f(nleqslv_res$x, d_S = d_S, v_S = v_S, Z_S = Z_S, Zbar = Zbar, type = "EL", del = del, n = n, returnw = T)             
-      }
-      
-      w_S0 = w_S
-      
-      theta_res = c(theta_res, EL1 = sum(y_S * w_S)) # EL1
-      # var_res = c(var_res, EL0 = var(eta) / n)
-      
-      
-      d_S = rep(1, sum(delta)); #u_vec = -pi # EL2
-      v_S = vx[Index_S]; u_vec = -pi * vx # EL2
-      u_vec_S = u_vec[Index_S]; Uhat = mean(u_vec); 
-      Z_S = cbind(1, x_S, u_vec_S); Zbar = c(1, colMeans(x), Uhat); Z_St = t(Z_S)
-      
-      init = rep(0, length(Zbar)); init[length(init)] = 1
-      
-      nleqslv_res = nleqslv(init, f, jac = h, d_S = d_S, v_S = v_S, Z_S = Z_S, 
-                            Z_St = Z_St, Zbar = Zbar, type = "EL", del = del, n = n,
-                            method = "Newton", control = list(maxit = 1e5, allowSingular = T),
-                            xscalm = "auto")
-      if(nleqslv_res$termcd != 1){
-        if(max(abs(f(nleqslv_res$x, d_S = d_S, v_S = v_S, Z_S = Z_S, Zbar = Zbar, type = "EL", del = del, n = n))) > 1e-5)
-          w_S = NA
-      }else{
-        w_S = f(nleqslv_res$x, d_S = d_S, v_S = v_S, Z_S = Z_S, Zbar = Zbar, type = "EL", del = del, n = n, returnw = T)             
-      }
-      
-      theta_res = c(theta_res, EL2 = sum(y_S * w_S)) # EL2
-      
-      d_S = rep(1, sum(delta)); #u_vec = -pi # EL3
-      v_S = vx[Index_S]; u_vec = -vx / pi # EL3
-      u_vec_S = u_vec[Index_S]; Uhat = mean(u_vec); 
-      Z_S = cbind(1, x_S, u_vec_S); Zbar = c(1, colMeans(x), Uhat); Z_St = t(Z_S)
-      
-      init = rep(0, length(Zbar)); init[length(init)] = 1
-      
-      nleqslv_res = nleqslv(init, f, jac = h, d_S = d_S, v_S = v_S / pi[Index_S]^2, Z_S = Z_S, 
-                            Z_St = Z_St, Zbar = Zbar, type = "EL", del = del, n = n,
-                            method = "Newton", control = list(maxit = 1e5, allowSingular = T),
-                            xscalm = "auto")
-      if(nleqslv_res$termcd != 1){
-        if(max(abs(f(nleqslv_res$x, d_S = d_S, v_S = v_S / pi[Index_S]^2, Z_S = Z_S, Zbar = Zbar, type = "EL", del = del, n = n))) > 1e-5)
-          w_S = NA
-      }else{
-        w_S = f(nleqslv_res$x, d_S = d_S, v_S = v_S / pi[Index_S]^2, Z_S = Z_S, Zbar = Zbar, type = "EL", del = del, n = n, returnw = T)             
-      }
-      
-      theta_res = c(theta_res, EL3 = sum(y_S * w_S)) # EL3
-      
-      
-      Omodel_d = lm(reformulate(paste0("x.", 1:pcol), response = "y"), weights = 1 / pi[Index_S], data = data_S)
+
+      Omodel_d = lm(reformulate(paste0("x.", 1:pcol), response = "y"), weights = 1 / pi, data = data_S)
+      # Omodel_d = lm(reformulate(paste0("x.", 1:pcol), response = "y"), data = data_S)      
+
       yhat_d = predict.lm(Omodel_d, data, type = "response")
-      
       data = cbind(data, e2 = (yhat_d - y)^2); data_S = data[Index_S,]
       
+      # glm(e[Index_S]^2 ~ x[Index_S,], family = gaussian(link = "log"))
+      
       Vmodel_d = glm(reformulate(paste0("x.", 1:pcol), response = "e2"), family = gaussian(link = "log"),
-                     weights = 1 / pi[Index_S], data = data_S)
+                     weights = 1 / pi, data = data_S)
+      # Vmodel_d = glm(reformulate(paste0("x.", 1:pcol), response = "e2"), family = gaussian(link = "log"),
+      #                data = data_S)
       vhat = predict.glm(Vmodel_d, data, type = "response")
       
-      
-      d_S = rep(1, sum(delta)); #u_vec = -pi # EL2
-      v_S = vhat[Index_S]; u_vec = -pi * vhat # EL2
-      u_vec_S = u_vec[Index_S]; Uhat = mean(u_vec); 
-      Z_S = cbind(1, x_S, u_vec_S); Zbar = c(1, colMeans(x), Uhat); Z_St = t(Z_S)
-      
-      init = rep(0, length(Zbar)); init[length(init)] = 1
-      
-      nleqslv_res = nleqslv(init, f, jac = h, d_S = d_S, v_S = v_S, Z_S = Z_S, 
-                            Z_St = Z_St, Zbar = Zbar, type = "EL", del = del, n = n,
-                            method = "Newton", control = list(maxit = 1e5, allowSingular = T),
-                            xscalm = "auto")
-      if(nleqslv_res$termcd != 1){
-        if(max(abs(f(nleqslv_res$x, d_S = d_S, v_S = v_S, Z_S = Z_S, Zbar = Zbar, type = "EL", del = del, n = n))) > 1e-5)
-          w_S = NA
-      }else{
-        w_S = f(nleqslv_res$x, d_S = d_S, v_S = v_S, Z_S = Z_S, Zbar = Zbar, type = "EL", del = del, n = n, returnw = T)             
+      for(type in c("EL", "ET", "SL")){
+        for(DScnt in 1:2){
+          if(DScnt == 1){
+            v_S = rep(1, sum(delta)) # DS1; v_i = 1
+          }else if(DScnt == 2){
+            v_S = vhat[Index_S] # DS2; v_i = v_i
+          }
+          
+          d_S = 1 / pi[Index_S]; 
+          Z_S = cbind(1, x_S); Zbar = c(1, colMeans(x)); Z_St = t(Z_S)
+          
+          # init = rep(0, length(Zbar)); init[1] = -1
+          # 
+          # nleqslv_res = nleqslv(init, f, jac = h, d_S = d_S, v_S = v_S, Z_S = Z_S, 
+          #                       Z_St = Z_St, Zbar = Zbar, type = "EL", del = del, n = n,
+          #                       method = "Newton", control = list(maxit = 1e5, allowSingular = T),
+          #                       xscalm = "auto")
+          # if(nleqslv_res$termcd != 1){
+          #   if(max(abs(f(nleqslv_res$x, d_S = d_S, v_S = v_S, Z_S = Z_S, Zbar = Zbar, type = "EL", del = del, n = n))) > 1e-5)
+          #     w_S = NA
+          # }else{
+          #   w_S = f(nleqslv_res$x, d_S = d_S, v_S = v_S, Z_S = Z_S, Zbar = Zbar, type = "EL", del = del, n = n, returnw = T)             
+          # }
+          
+          # lambda = CVXR::Variable(length(Zbar))
+          # prob <- CVXR::Maximize(sum(d_S * v_S * log(-(Z_S %*% lambda) / v_S)) + sum(Zbar * lambda) * n)
+          # res <- CVXR::solve(CVXR::Problem(prob))
+          # lambdahat = drop(res$getValue(lambda))
+          # w_S = f(lambdahat, d_S = d_S, v_S = v_S, Z_S = Z_S, Zbar = Zbar, type = "EL", del = del, n = n, returnw = T)
+          
+          w = CVXR::Variable(sum(Index_S))
+          constraints <- list(Z_St %*% w / n == Zbar)
+          if(type == "EL"){
+            prob <- CVXR::Minimize(sum(v_S * (-d_S * log(w) + w) ))
+          }else if(type == "ET"){
+            prob <- CVXR::Minimize(sum(v_S * (-entr(w) - w * log(d_S)  - w)))
+          }else if(type == "SL"){
+            prob <- CVXR::Minimize(sum(v_S * ((w - d_S)^2 / d_S)))
+          }
+          res <- CVXR::solve(CVXR::Problem(prob, constraints), solver = "ECOS_BB")
+          w_S = drop(res$getValue(w))
+          
+          # Z_St %*% w_S - Zbar * n
+          
+          gammahat = solve(Z_St %*% (Z_S / d_S / v_S),
+                           Z_St %*% (y_S / d_S / v_S))
+          var1 = sum((y_S - c(Z_S %*% gammahat))^2 / pi[Index_S] * (1 / pi[Index_S] - 1))
+          var2 = sum((y_S - c(Z_S %*% gammahat))^2 * w_S^2 * (1 -  pi[Index_S]))
+          
+          theta_res = c(theta_res, setNames(sum(y_S * w_S), paste(type, "DS", DScnt, sep = ""))) # DS
+          
+          var_res = c(var_res, setNames(var1, paste(type, "DS", DScnt, sep = "")))
+          var_res2 = c(var_res2, setNames(var2, paste(type, "DS", DScnt, sep = "")))
+        }
+        
+        for(GECcnt in 1:2){
+          if(type == "EL"){
+            u_vec = -pi
+          }else if(type == "ET"){
+            u_vec = -log(pi)
+          }else if(type == "SL"){
+            u_vec = 1 / pi
+          }
+          if(GECcnt == 1){
+            v_S = rep(1, sum(delta)); # GEC1; c_i = 1
+          }else if(GECcnt == 2){
+            v_S = vhat[Index_S]; u_vec = u_vec * vhat # GEC4; c_i = \hat v_i          
+          }else if(GECcnt == 3){
+            # v_S = vx[Index_S] / pi[Index_S]^2; u_vec = -vx / pi # GEC3; c_i = v_i / g'(d_i)
+          }else if(GECcnt == 4){
+            v_S = vx[Index_S]; u_vec = u_vec * vx # GEC2; c_i = v_i
+          }else if(GECcnt == 5){
+            # v_S = vhat[Index_S] / pi[Index_S]^2; u_vec = -vhat / pi # GEC5; c_i = \hat v_i / g'(d_i)
+          }
+          
+          d_S = rep(1, sum(delta)); 
+          u_vec_S = u_vec[Index_S]; Uhat = mean(u_vec); 
+          Z_S = cbind(1, x_S, u_vec_S); Zbar = c(1, colMeans(x), Uhat); Z_St = t(Z_S)
+          
+          init = rep(0, length(Zbar)); init[length(init)] = 1
+          
+          nleqslv_res = nleqslv(init, f, jac = h, d_S = d_S, v_S = v_S, Z_S = Z_S, 
+                                Z_St = Z_St, Zbar = Zbar, type = type, del = del, n = n,
+                                method = "Newton", control = list(maxit = 1e5, allowSingular = T),
+                                xscalm = "auto")
+          if(nleqslv_res$termcd != 1){
+            if(max(abs(f(nleqslv_res$x, d_S = d_S, v_S = v_S, Z_S = Z_S, Zbar = Zbar, type = type, del = del, n = n))) > 1e-5)
+              w_S = NA
+          }else{
+            w_S = f(nleqslv_res$x, d_S = d_S, v_S = v_S, Z_S = Z_S, Zbar = Zbar, type = type, del = del, n = n, returnw = T)             
+          }
+          
+          gammahat = solve(Z_St %*% (Z_S * prime1(1 / pi[Index_S], type = type, del = del) / d_S / v_S),
+                           Z_St %*% (y_S * prime1(1 / pi[Index_S], type = type, del = del) / d_S / v_S))
+          var1 = sum((y_S - c(Z_S %*% gammahat))^2 / pi[Index_S] * (1 / pi[Index_S] - 1))
+          var2 = sum((y_S - c(Z_S %*% gammahat))^2 * w_S^2 * (1 -  pi[Index_S]))
+          
+          theta_res = c(theta_res, setNames(sum(y_S * w_S), paste(type, "GEC", GECcnt, sep = ""))) # GEC
+          var_res = c(var_res, setNames(var1, paste(type, "GEC", GECcnt, sep = "")))
+          var_res2 = c(var_res2, setNames(var2, paste(type, "GEC", GECcnt, sep = "")))
+          # var_res = c(var_res, EL0 = var(eta) / n)
+        }
       }
       
-      theta_res = c(theta_res, EL4 = sum(y_S * w_S)) # EL2
+
       
-      d_S = rep(1, sum(delta)); #u_vec = -pi # EL3
-      v_S = vhat[Index_S]; u_vec = -vhat / pi # EL3
-      u_vec_S = u_vec[Index_S]; Uhat = mean(u_vec); 
-      Z_S = cbind(1, x_S, u_vec_S); Zbar = c(1, colMeans(x), Uhat); Z_St = t(Z_S)
       
-      init = rep(0, length(Zbar)); init[length(init)] = 1
-      
-      nleqslv_res = nleqslv(init, f, jac = h, d_S = d_S, v_S = v_S / pi[Index_S]^2, Z_S = Z_S, 
-                            Z_St = Z_St, Zbar = Zbar, type = "EL", del = del, n = n,
-                            method = "Newton", control = list(maxit = 1e5, allowSingular = T),
-                            xscalm = "auto")
-      if(nleqslv_res$termcd != 1){
-        if(max(abs(f(nleqslv_res$x, d_S = d_S, v_S = v_S / pi[Index_S]^2, Z_S = Z_S, Zbar = Zbar, type = "EL", del = del, n = n))) > 1e-5)
-          w_S = NA
-      }else{
-        w_S = f(nleqslv_res$x, d_S = d_S, v_S = v_S / pi[Index_S]^2, Z_S = Z_S, Zbar = Zbar, type = "EL", del = del, n = n, returnw = T)             
-      }
-      
-      theta_res = c(theta_res, EL5 = sum(y_S * w_S)) # EL3
-      
+
+        
+
+            
       # glm(vx ~ x.1 + x.2 + x.3 + x.4, family = gaussian(link = "log"),
       #     weights = 1 / pi[Index_S], data = data_S)
       
@@ -416,26 +434,33 @@ final_res <- foreach(
       
       # var_res = c(var_res, GEC = var(eta) / n)
       
-      # CR_res = ifelse(abs(theta_res - theta) < qnorm(0.975) * sqrt(var_res), 1, 0)
+      CR_res = ifelse(abs(theta_res - theta) < qnorm(0.975) * sqrt(var_res), 1, 0)
+      CR_res2 = ifelse(abs(theta_res - theta) < qnorm(0.975) * sqrt(var_res2), 1, 0)
       
       # alpha_vec = c(alpha_vec, nlmres$par)
       theta_mat = cbind(theta_mat, theta_res)
-      # var_mat = cbind(var_mat, var_res)
-      # CR_mat = cbind(CR_mat, CR_res)
+      var_mat = cbind(var_mat, var_res); var_mat2 = cbind(var_mat2, var_res2)
+      CR_mat = cbind(CR_mat, CR_res); CR_mat2 = cbind(CR_mat2, CR_res2)
     }
     # list(theta_mat, alpha = alpha_vec, var_mat, CR_mat)
-    list(theta_mat)
+    list(theta_mat, var_mat, var_mat2, CR_mat, CR_mat2)
   }
 # final_res
+paste("# of failure:", sum(!sapply(lapply(final_res, function(x) x[[1]]), function(x) is.numeric(unlist(x))))); 
+final_res0 = lapply(final_res, function(x) x[[1]])
+print(final_res0[!sapply(final_res0, function(x) is.numeric(unlist(x)))])
+
+final_res = final_res[sapply(final_res, length) == max(sapply(final_res, length))]
+
 if(!interactive()) save.image(paste(timenow0, ".RData", sep = ""))
+
 final_res1 = lapply(final_res, function(x) x[[1]])
 
 stopCluster(cl)
 timenow2 = Sys.time()
 print(timenow2 - timenow1)
 # if(sum(!sapply(final_res1, function(x) is.numeric(unlist(x)))) != 0) stop(paste(final_res1))
-paste("# of failure:", sum(!sapply(final_res1, function(x) is.numeric(unlist(x))))); final_res0 = final_res1
-print(final_res0[!sapply(final_res0, function(x) is.numeric(unlist(x)))])
+
 final_res1 = final_res1[sapply(final_res1, function(x) is.numeric(unlist(x)))]
 
 # res1 <- Reduce(`+`, final_res1) / length(final_res1)
@@ -452,7 +477,29 @@ rownames(res) = row.names(final_res1[[1]])
 
 colSums(is.na(tmpres))
 
-xtable::xtable(res, digits = 4)
+# xtable::xtable(res, digits = 4)
 
 res
 
+final_res2 = lapply(final_res, function(x) x[[2]])
+final_res2 = final_res2[sapply(final_res2, function(x) is.numeric(unlist(x)))]
+tmpres2 = do.call(rbind, lapply(final_res2, c))
+
+final_res4 = lapply(final_res, function(x) x[[4]])
+final_res4 = final_res4[sapply(final_res4, function(x) is.numeric(unlist(x)))]
+tmpres4 = do.call(rbind, lapply(final_res4, c))
+cbind()
+
+final_res3 = lapply(final_res, function(x) x[[3]])
+final_res3 = final_res3[sapply(final_res3, function(x) is.numeric(unlist(x)))]
+tmpres3 = do.call(rbind, lapply(final_res3, c))
+
+final_res5 = lapply(final_res, function(x) x[[5]])
+final_res5 = final_res5[sapply(final_res5, function(x) is.numeric(unlist(x)))]
+tmpres5 = do.call(rbind, lapply(final_res5, c))
+res2 = cbind(RB1 = (colMeans(tmpres2, na.rm = TRUE) - SE^2) / SE^2, CR1 = colMeans(tmpres4, na.rm = TRUE),
+      RB2 = (colMeans(tmpres3, na.rm = TRUE) - SE^2) / SE^2, CR2 = colMeans(tmpres5, na.rm = TRUE))
+rownames(res2) = row.names(final_res1[[1]])
+
+xtable::xtable(cbind(res, res2), digits = 4)
+# res2
