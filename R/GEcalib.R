@@ -1,62 +1,43 @@
 #' Generalized Entropy Calibration
 
 #' @import nleqslv
-
-f = function(lambda, d, Xs, total, entropy, del, ..., returnw = F){
-  # w = d * ginv(drop(Xs %*% lambda), entropy = entropy)
-  if(entropy == "HD" & any(Xs %*% lambda >= 0)) return(rep(Inf, length(lambda)))
-  if(entropy == "PH" & any(abs(Xs %*% lambda) >= del)) return(rep(Inf, length(lambda)))
-  
-  if(entropy == "SL"){
-    w = d * drop(Xs %*% lambda)
-  }else if(entropy == "EL"){
-    w = -d / drop(Xs %*% lambda)
-  }else if(entropy == "ET"){
-    w = d * exp(drop(Xs %*% lambda))
-  }else if(entropy == "CE"){
-    w = d / (1 - exp(drop(Xs %*% lambda)))
-  }else if(entropy == "HD"){
-    w = d / drop(Xs %*% lambda)^2
-  }else if(entropy == "PH"){
-    w = d / sqrt(1 / drop(Xs %*% lambda)^2 - 1 / del^2)
-  }
-  if(entropy != "SL" & any(w <= 0)) return(rep(Inf, length(lambda)))
-  if(entropy == "CE" & any(w <= 1)) return(rep(Inf, length(lambda)))
-  if(returnw == T){
-    return(w)
-  }else{
-    return(colSums(Xs * w) - total)
-  }
-}
-
-h = function(lambda, d, Xs, total, entropy, del){
-  # return(t(Xs) %*% (Xs * d * ginvprime(drop(Xs %*% lambda), entropy = entropy)))
-  if(entropy == "SL"){
-    return(t(Xs) %*% (Xs * d))
-  }else if(entropy == "EL"){
-    w = -d / drop(Xs %*% lambda)
-    return(t(Xs) %*% (Xs * (w^2 / d)))
-  }else if(entropy == "ET"){
-    w = d * exp(drop(Xs %*% lambda))
-    return(t(Xs) %*% (Xs * w))
-  }else if(entropy == "CE"){
-    p_Stmp = 1 / (1 - exp(drop(Xs %*% lambda)))
-    return(t(Xs) %*% (Xs * d * p_Stmp * (p_Stmp - 1)))
-  }else if(entropy == "HD"){
-    return(t(Xs) %*% (Xs * (-2 * d / drop(Xs %*% lambda)^3)))
-  }else if(entropy == "PH"){
-    return(t(Xs) %*% (Xs * (d * (1 - (drop(Xs %*% lambda) / del)^2)^(-1.5))))
-  }
-}
+#'
+#' @param Xs A matrix of auxiliary variables.
+#' @param total A vector of population totals.
+#' @param d An optional vector of initial weights.
+#' @param entropy An entropy function(Squared-loss:"SL", Empirical Likelihood: "EL", Exponential Tilting: "ET", Cross-Entropy: "CE", Helinger Distance: "HD", "PH")
+#' @param method an optional vector that can be used in \code{nleqslv}.
+#' @param control an optional list that can be used in \code{nleqslv}.
+#' @return A vector of calibration weights.
+#' @examples
+#' Xs=cbind(
+#' 
+#' c(1,1,1,1,1,1,1,1,1,1),
+#' c(1,1,1,1,1,0,0,0,0,0),
+#' c(1,2,3,4,5,6,7,8,9,10)
+#' )
+#' # inclusion probabilities
+#' piks=rep(0.2,times=10); d=1/piks
+#' # vector of population totals
+#' total=c(50,24,290)
+#' 
+#' # Calibration weights
+#' # calib(Xs, d=d,total,method="raking") * d
+#' GEcalib(Xs, d, total, entropy = "ET", DS = T)
+#' GEcalib(Xs, d, total, entropy = "ET", DS = F)
+#' 
+#' # calib(Xs, d=d,total,method="linear") * d
+#' GEcalib(Xs, d, total, entropy = "SL", DS = T)
+#' GEcalib(Xs, d, total, entropy = "SL", DS = F)
 
 #' @export
-GEcalib = function(Xs, d, total, entropy = c("SL", "EL", "ET", "CE", "HD", "PH"), ...,
-                   DS = T, method = "Newton", control = list(maxit = 1e5, allowSingular = T)){
+GEcalib = function(Xs, total, d = NULL, entropy = c("SL", "EL", "ET", "CE", "HD", "PH"), ...,
+                   method = "Newton", control = list(maxit = 1e5, allowSingular = T)){
   
   del = quantile(d, 0.80) 
   
   init = rep(0, length(total))
-  if(!DS){
+  if(is.null(d)){
     init[length(init)] = 1
     # init = c(0, 0, 1)
   }else{
@@ -74,6 +55,8 @@ GEcalib = function(Xs, d, total, entropy = c("SL", "EL", "ET", "CE", "HD", "PH")
       init[1] = 1 / sqrt(1 + 1 / del^2)
     }
   }
+  
+  if(is.null(d)) d = rep(1, nrow(Xs))
   
   nleqslv_res = nleqslv(init, f, jac = h, d = d, Xs = Xs, 
                         total = total, entropy = entropy, del = del,
