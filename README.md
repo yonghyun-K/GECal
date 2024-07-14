@@ -35,15 +35,15 @@ piks=rep(0.2,times=10); d=1/piks
 total=c(50,24,290)
 
 # Calibration weights
-calib(Xs, d=d,total,method="raking") * d
-GEcalib(Xs, d, total, entropy = "ET", DS = T)
-GEcalib(Xs, d, total, entropy = "ET", DS = F)
+calib(Xs, total, d = d, method="raking") * d
+GEcalib(Xs, total, d, entropy = "ET")
+GEcalib(Xs, total, entropy = "ET")
 
-calib(Xs, d=d,total,method="linear") * d
-GEcalib(Xs, d, total, entropy = "SL", DS = T)
-GEcalib(Xs, d, total, entropy = "SL", DS = F)
+calib(Xs, total, d = d, method="linear") * d
+GEcalib(Xs, total, d, entropy = "SL")
+GEcalib(Xs, total, entropy = "SL")
 
-# GEcalib(Xs, d, total, entropy = "EL")
+# GEcalib(Xs, total, d, entropy = "EL")
 
 ############
 ## Example 2
@@ -56,14 +56,14 @@ data(belgianmunicipalities)
 attach(belgianmunicipalities)
 # matrix of calibration variables for the population
 X=cbind(1, 
-  Men03/mean(Men03),
-  Women03/mean(Women03),
-  Diffmen,
-  Diffwom,
-  TaxableIncome/mean(TaxableIncome),
-  Totaltaxation/mean(Totaltaxation),
-  medianincome/mean(medianincome),
-  averageincome/mean(averageincome))
+        Men03/mean(Men03),
+        Women03/mean(Women03),
+        Diffmen,
+        Diffwom,
+        TaxableIncome/mean(TaxableIncome),
+        Totaltaxation/mean(Totaltaxation),
+        medianincome/mean(medianincome),
+        averageincome/mean(averageincome))
 # selection of a sample with expectation size equal to 200
 # by means of Poisson sampling
 # the inclusion probabilities are proportional to the average income 
@@ -78,32 +78,33 @@ total=c(t(rep(1,times=N))%*%X)
 # computation of the g-weights
 # by means of different calibration methods
 
-all.equal(calib(Xs,d=d,total,method="linear") * d,
-          GEcalib(Xs, d, total, entropy = "SL", DS = T))
-GEcalib(cbind(Xs, d), d, c(total, sum(1 / pik)), entropy = "SL", DS = F)
+all.equal(calib(Xs, total, d = d, method="linear") * d,
+          GEcalib(Xs, total, d = d, entropy = "SL"))
+GEcalib(cbind(Xs, d), c(total, sum(1 / pik)), entropy = "SL")
 
-all.equal(calib(Xs,d=d,total,method="raking") * d,
-          GEcalib(Xs, d, total, entropy = "ET", DS = T))
-GEcalib(cbind(Xs, log(d)), d, c(total, sum(log(1 / pik))), entropy = "ET", DS = F)
+all.equal(calib(Xs, total, d = d, method="raking") * d,
+          GEcalib(Xs, total, d = d, entropy = "ET"))
+GEcalib(cbind(Xs, log(d)), c(total, sum(log(1 / pik))), entropy = "ET")
 
-all.equal(GEcalib(Xs, d, total, entropy = "EL", DS = T),
-GEcalib(cbind(Xs[,-ncol(Xs)], -Xs[,ncol(Xs)]), d, c(total[-ncol(Xs)], -total[ncol(Xs)]), 
-        entropy = "EL", DS = F))
+all.equal(GEcalib(Xs, total, d = d, entropy = "EL"),
+          GEcalib(cbind(Xs[,-ncol(Xs)], -Xs[,ncol(Xs)]), c(total[-ncol(Xs)], -total[ncol(Xs)]), d = d, 
+                  entropy = "EL"))
 
-GEcalib(Xs, d, total, entropy = "HD", DS = T)
-GEcalib(cbind(Xs, -sqrt(1 / d)), d, c(total, sum(-sqrt(pik))), entropy = "HD", DS = F)
+GEcalib(cbind(Xs[,-ncol(Xs)], -piks), c(total[-ncol(Xs)], sum(-pik)), 
+        entropy = "EL")
+
+# GEcalib(cbind(Xs), c(total), entropy = "EL")
+
+
+GEcalib(Xs, total, d = d, entropy = "HD")
+GEcalib(cbind(Xs, -sqrt(1 / d)), c(total, sum(-sqrt(pik))), entropy = "HD")
 ```
 
 ## Externel Links
 <!--
-- [CRAN Task View: Missing Data](https://cran.r-project.org/web/views/MissingData.html)
-
-- [FHDI](https://github.com/cran/FHDI)
-
-- [mice](https://github.com/amices/mice)
-- https://stefvanbuuren.name/fimd/
-
-- [missForest](https://github.com/stekhoven/missForest)
-
-- [GAIN](https://github.com/jsyoon0823/GAIN)
 -->
+- [CRAN Task View: CRAN Task View: Official Statistics & Survey Statistics]([https://cran.r-project.org/web/views/MissingData.html](https://cran.r-project.org/web/views/OfficialStatistics.html))
+
+- [sampling](https://cran.r-project.org/web/packages/sampling/)
+
+- [laeken](https://cran.r-project.org/web/packages/laeken/)
