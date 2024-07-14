@@ -9,7 +9,6 @@ GEcalib(
   total,
   d = NULL,
   entropy = c("SL", "EL", "ET", "CE", "HD", "PH"),
-  ...,
   method = "Newton",
   control = list(maxit = 1e+05, allowSingular = T)
 )
@@ -35,10 +34,9 @@ Generalized Entropy Calibration
 }
 \examples{
 Xs=cbind(
-
-c(1,1,1,1,1,1,1,1,1,1),
-c(1,1,1,1,1,0,0,0,0,0),
-c(1,2,3,4,5,6,7,8,9,10)
+  c(1,1,1,1,1,1,1,1,1,1),
+  c(1,1,1,1,1,0,0,0,0,0),
+  c(1,2,3,4,5,6,7,8,9,10)
 )
 # inclusion probabilities
 piks=rep(0.2,times=10); d=1/piks
@@ -46,11 +44,11 @@ piks=rep(0.2,times=10); d=1/piks
 total=c(50,24,290)
 
 # Calibration weights
-# calib(Xs, d=d,total,method="raking") * d
-GEcalib(Xs, d, total, entropy = "ET", DS = T)
-GEcalib(Xs, d, total, entropy = "ET", DS = F)
+# calib(Xs, total, d = d, method="raking") * d
+GEcalib(Xs, total, d, entropy = "ET")
+GEcalib(Xs, total, entropy = "ET")
 
-# calib(Xs, d=d,total,method="linear") * d
-GEcalib(Xs, d, total, entropy = "SL", DS = T)
-GEcalib(Xs, d, total, entropy = "SL", DS = F)
+# calib(Xs, total, d = d, method="linear") * d
+GEcalib(Xs, total, d, entropy = "SL")
+GEcalib(Xs, total, entropy = "SL")
 }
