@@ -35,11 +35,11 @@ piks=rep(0.2,times=10); d=1/piks
 total=c(50,24,290)
 
 # Calibration weights
-calib(Xs,d=d,total,method="raking") * d
+calib(Xs, d=d,total,method="raking") * d
 GEcalib(Xs, d, total, entropy = "ET", DS = T)
 GEcalib(Xs, d, total, entropy = "ET", DS = F)
 
-calib(Xs,d=d,total,method="linear") * d
+calib(Xs, d=d,total,method="linear") * d
 GEcalib(Xs, d, total, entropy = "SL", DS = T)
 GEcalib(Xs, d, total, entropy = "SL", DS = F)
 
