@@ -103,7 +103,7 @@ GEcalib(cbind(Xs, -sqrt(1 / d)), c(total, sum(-sqrt(pik))), entropy = "HD")
 ## Externel Links
 <!--
 -->
-- [CRAN Task View: CRAN Task View: Official Statistics & Survey Statistics](https://cran.r-project.org/web/views/OfficialStatistics.html)
+- [CRAN Task View: Official Statistics & Survey Statistics](https://cran.r-project.org/web/views/OfficialStatistics.html)
 
 - [sampling](https://cran.r-project.org/web/packages/sampling/)
 
