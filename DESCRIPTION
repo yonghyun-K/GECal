@@ -1,11 +1,19 @@
 Package: GECal
 Type: Package
-Title: Generalized Entropy Calibration (Title Case)
+Title: Generalized Entropy Calibration
 Version: 0.1.0
-Author: Yonghyun Kwon
+Authors@R: c(person("Yonghyun","Kwon", role=c("aut","cre"), email="yhkwon@kma.ac.kr"), 
+			 person("Jaekwang","Kim", role="aut", email="jkim@iastate.edu"),
+             person("Yumou","Qiu", role="aut",email="yumouqiu@iastate.edu")
+			 )
+Author: Yonghyun Kwon [aut, cre],
+  Jaekwang Kim [aut],
+  Yumou Qiu [aut]
 Maintainer: Yonghyun Kwon <yhkwon@kma.ac.kr>
 Description: Generalized Entropy Calibration produces calibration weights based on generalized entropy as the objective function for optimization. In GECcal, design weights play a role in the constraints to ensure design consistency, rather than being part of the objective function.
 Encoding: UTF-8
+url: https://github.com/yonghyun-K/GECal
+Depends: R (>= 3.4.0)
 LazyData: true
 Imports:
   nleqslv,
