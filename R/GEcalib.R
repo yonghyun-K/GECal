@@ -1,7 +1,15 @@
-#' Generalized Entropy Calibration
-
+#' @title Generalized Entropy Calibration
+#' 
+#' @description
+#' \code{GEcalib} computes the generalized entropy calibration weight proposed by Kwon et.al.(2024).
+#' The \code{GEcalib} weight minimizes the negative generalized entropy:
+#' \deqn{\sum_{i \in A} G(\omega_i)}
+#' subject to the calibration constraints \eqn{\sum_{i \in A} \omega_i \bm z_i = \sum_{i \in U} \bm z_i},
+#' where \eqn{A} is the index of sample, \eqn{U} is the index of population, and
+#' \eqn{\bm z_i} are the auxiliary variables whose population totals are known.
+#' 
 #' @import nleqslv
-#' @import sampling
+#' @importFrom sampling calib
 #'
 #' @param Xs A matrix of auxiliary variables.
 #' @param total A vector of population totals.
@@ -9,7 +17,16 @@
 #' @param entropy An entropy function(Squared-loss:"SL", Empirical Likelihood: "EL", Exponential Tilting: "ET", Cross-Entropy: "CE", Helinger Distance: "HD", "PH")
 #' @param method an optional vector that can be used in \code{nleqslv}.
 #' @param control an optional list that can be used in \code{nleqslv}.
+#' 
 #' @return A vector of calibration weights.
+#' 
+#' @references
+#' Kwon, Y., Kim, J., & Qiu, Y. (2024). Debiased calibration estimation using generalized entropy in survey sampling.
+#' Arxiv preprint <https://arxiv.org/abs/2404.01076>
+#' 
+#' Deville, J. C., and Särndal, C. E. (1992). Calibration estimators in survey sampling.
+#' Journal of the American statistical Association, 87(418), 376-382.
+#' 
 #' @examples
 #' Xs=cbind(
 #'   c(1,1,1,1,1,1,1,1,1,1),

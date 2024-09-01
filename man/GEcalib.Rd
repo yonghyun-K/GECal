@@ -30,7 +30,12 @@ GEcalib(
 A vector of calibration weights.
 }
 \description{
-Generalized Entropy Calibration
+\code{GEcalib} computes the generalized entropy calibration weight proposed by Kwon et.al. (2024).
+The \code{GEcalib} weight minimizes the negative generalized entropy:
+\deqn{\sum_{i \in A} G(\omega_i)}
+subject to the calibration constraints \eqn{\sum_{i \in A} \omega_i \bm z_i = \sum_{i \in U} \bm z_i},
+where \eqn{A} is the index of sample, \eqn{U} is the index of population, and
+\eqn{\bm z_i} are the auxiliary variables whose population totals are known.
 }
 \examples{
 Xs=cbind(
@@ -51,4 +56,11 @@ GEcalib(Xs, total, entropy = "ET")
 # calib(Xs, total, d = d, method="linear") * d
 GEcalib(Xs, total, d, entropy = "SL")
 GEcalib(Xs, total, entropy = "SL")
+}
+\references{
+Kwon, Y., Kim, J., & Qiu, Y. (2024). Debiased calibration estimation using generalized entropy in survey sampling.
+Arxiv preprint <https://arxiv.org/abs/2404.01076>
+
+Deville, J. C., and Särndal, C. E. (1992). Calibration estimators in survey sampling.
+Journal of the American statistical Association, 87(418), 376-382.
 }
