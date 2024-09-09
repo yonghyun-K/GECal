@@ -30,7 +30,7 @@ GEcalib(
 A vector of calibration weights.
 }
 \description{
-\code{GEcalib} computes the generalized entropy calibration weight proposed by Kwon et.al. (2024).
+\code{GEcalib} computes the generalized entropy calibration weight proposed by Kwon et.al.(2024).
 The \code{GEcalib} weight minimizes the negative generalized entropy:
 \deqn{\sum_{i \in A} G(\omega_i)}
 subject to the calibration constraints \eqn{\sum_{i \in A} \omega_i \bm z_i = \sum_{i \in U} \bm z_i},
