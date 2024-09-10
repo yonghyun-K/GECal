@@ -4,7 +4,7 @@ G = function(x, entropy, del){
          EL = -log(x),
          ET = x * (log(x) - 1),
          CE = (x-1) * log(x-1) - x * log(x),
-         HD = -2 * sqrt(x),
+         HD = -4 * sqrt(x),
          PH = del^2 * sqrt(1 + (x / del)^2))
 }
 

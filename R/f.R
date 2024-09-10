@@ -12,7 +12,7 @@ f = function(lambda, d, Xs, total, entropy, del, ..., returnw = F){
   }else if(entropy == "CE"){
     w = d / (1 - exp(drop(Xs %*% lambda)))
   }else if(entropy == "HD"){
-    w = d / drop(Xs %*% lambda)^2
+    w = 4 * d / drop(Xs %*% lambda)^2
   }else if(entropy == "PH"){
     w = d / sqrt(1 / drop(Xs %*% lambda)^2 - 1 / del^2)
   }

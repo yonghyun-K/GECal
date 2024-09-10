@@ -12,7 +12,7 @@ h = function(lambda, d, Xs, total, entropy, del){
     p_Stmp = 1 / (1 - exp(drop(Xs %*% lambda)))
     return(t(Xs) %*% (Xs * d * p_Stmp * (p_Stmp - 1)))
   }else if(entropy == "HD"){
-    return(t(Xs) %*% (Xs * (-2 * d / drop(Xs %*% lambda)^3)))
+    return(t(Xs) %*% (Xs * (-8 * d / drop(Xs %*% lambda)^3)))
   }else if(entropy == "PH"){
     return(t(Xs) %*% (Xs * (d * (1 - (drop(Xs %*% lambda) / del)^2)^(-1.5))))
   }

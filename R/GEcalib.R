@@ -67,7 +67,7 @@ GEcalib = function(Xs, total, d = NULL, entropy = c("SL", "EL", "ET", "CE", "HD"
     }else if(entropy == "CE"){
       init[1] = -1
     }else if(entropy == "HD"){
-      init[1] = -1
+      init[1] = -2
     }else if(entropy == "PH"){
       init[1] = 1 / sqrt(1 + 1 / del^2)
     }
