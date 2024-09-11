@@ -20,6 +20,21 @@
 #' 
 #' @return A vector of calibration weights.
 #' 
+#' @section Summary:
+#' 
+#' \tabular{cc}{
+#' \strong{GEC} \tab \strong{DS} \cr
+#' \eqn{\min_{\bm \omega} \left(-H(\bm \omega)\right) = \sum_{i \in A}G(\omega_i) \quad} \tab 
+#' \eqn{\quad \min_{\bm \omega} D(\bm \omega, \bm d) = \sum_{i \in A}d_iG(\omega_i / d_i)} \cr
+#' \deqn{G(\omega) = \begin{cases} \frac{1}{r(r+1)} \omega^{r+1} & r \neq 0, -1\\ 
+#' \omega \log \omega - \omega & r = 0\text{(ET)} \\ 
+#' -\log \omega & r = -1\text{(EL)} \end{cases}} 
+#' \tab \deqn{G(\omega) = \begin{cases} \frac{1}{r(r+1)} \left(\omega^{r+1} - (r+1)\omega + r\right) & r \neq 0, -1 \\
+#' \omega \log \omega - \omega + 1 & r = 0\text{(ET)} \\
+#' -\log \omega + \omega - 1 & r = -1\text{(EL)} \end{cases}} \cr
+#' }
+#' 
+#' 
 #' @references
 #' Kwon, Y., Kim, J., & Qiu, Y. (2024). Debiased calibration estimation using generalized entropy in survey sampling.
 #' Arxiv preprint <https://arxiv.org/abs/2404.01076>

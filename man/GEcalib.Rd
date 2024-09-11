@@ -37,6 +37,22 @@ subject to the calibration constraints \eqn{\sum_{i \in A} \omega_i \bm z_i = \s
 where \eqn{A} is the index of sample, \eqn{U} is the index of population, and
 \eqn{\bm z_i} are the auxiliary variables whose population totals are known.
 }
+\section{Summary}{
+
+
+\tabular{cc}{
+\strong{GEC} \tab \strong{DS} \cr
+\eqn{\min_{\bm \omega} \left(-H(\bm \omega)\right) = \sum_{i \in A}G(\omega_i) \quad} \tab 
+\eqn{\quad \min_{\bm \omega} D(\bm \omega, \bm d) = \sum_{i \in A}d_iG(\omega_i / d_i)} \cr
+\deqn{G(\omega) = \begin{cases} \frac{1}{r(r+1)} \omega^{r+1} & r \neq 0, -1\\ 
+\omega \log \omega - \omega & r = 0\text{(ET)} \\ 
+-\log \omega & r = -1\text{(EL)} \end{cases}} 
+\tab \deqn{G(\omega) = \begin{cases} \frac{1}{r(r+1)} \left(\omega^{r+1} - (r+1)\omega + r\right) & r \neq 0, -1 \\
+\omega \log \omega - \omega + 1 & r = 0\text{(ET)} \\
+-\log \omega + \omega - 1 & r = -1\text{(EL)} \end{cases}} \cr
+}
+}
+
 \examples{
 Xs=cbind(
   c(1,1,1,1,1,1,1,1,1,1),
