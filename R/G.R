@@ -6,7 +6,7 @@ G = function(x, entropy, del = NULL){
     }else if(entropy == -1){
       -log(x)
     }else{
-      x^(entropy + 1) / (entropy * (entrop + 1))
+      x^(entropy + 1) / (entropy * (entropy + 1))
     }
   } else {
     switch(entropy,
@@ -23,7 +23,7 @@ G_DS = function(x, entropy, del = NULL){
     }else if(entropy == -1){
       -log(x) + x - 1
     }else{
-      (x^(entropy + 1) - (entrop + 1) * x + entropy) / (entropy * (entrop + 1))
+      (x^(entropy + 1) - (entropy + 1) * x + entropy) / (entropy * (entropy + 1))
     }
   }else{
     return(rep(Inf, length(x)))
@@ -35,7 +35,7 @@ ginv = function(x, entropy = NULL, del = NULL, intercept = rep(0, length(x))){
   if (is.numeric(entropy)) {
     if(!(entropy %% 2 == 1) & any(intercept + x * entropy < 0)) return(rep(Inf, length(x)))
     if(entropy == 0){
-      w = exp(x)
+      w = exp(intercept + x)
     }else{
       w = (intercept + x * entropy)^(1 / entropy)
     }
@@ -83,6 +83,7 @@ fprime = function(x, entropy = NULL, del = NULL){ # Inverse of gprime(d)
 #' @export
 g = function(x, entropy = NULL, del = NULL){
   if(is.null(entropy))  entropy <- get("entropy", envir = parent.frame())
+  if(is.null(del))  del <- get("del", envir = parent.frame())
 
   if (is.numeric(entropy)) {
     # if(!(entropy > 0 & entropy %% 2 == 1) & any(x < 0)) return(rep(Inf, length(x)))
