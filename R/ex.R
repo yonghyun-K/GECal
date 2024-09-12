@@ -1,3 +1,7 @@
+# devtools::build_manual
+# devtools::check
+# 
+# 
 # GECal:::GEcalib(~Sepal.Length + Sepal.Width + g(Petal.Width), dweight = Petal.Width,
 #          data = iris, const = rep(1, 4),
 #          method = "GEC",entropy = 1)
@@ -10,20 +14,6 @@
 #                  data = iris, const = c(1,1,1,2 + 2 * log(2) * nrow(iris)),
 #                  method = "GEC",entropy = 1, weight.scale = 2)
 # 
-# GECal:::GEcalib(~Sepal.Length + Sepal.Width + g(2 * Petal.Width), dweight = 2 * Petal.Width,
-#                  data = iris, const = c(1,1,1,2),
-#                  method = "GEC",entropy = 1)
-# 
-# GECal:::GEcalib(~ + g(2 * Sepal.Length), dweight = Sepal.Length,
-#                  data = iris, const = c(870, 2 * 1500),
-#                  method = "GEC",entropy = 0)
-# 
-# 
-# c(sum(iris$Sepal.Length), sum(g(iris$Sepal.Length, entropy = 0) * iris$Sepal.Length))
-# 
-# GECal:::GEcalib(~ + g(2 * Petal.Width), dweight = 2 * Petal.Width,
-#                  data = iris, const = c(1,1,1,2),
-#                  method = "GEC",entropy = 0)
 # 
 # 
 # 
@@ -147,7 +137,7 @@
 # svytotal(~api00, dsrsg)
 # # str(unclass(dsrs))
 # 
-# calibration <- GECal:::GEcalib(~ stype, dweight = pw, data = apisrs, 
+# calibration <- GECal:::GEcalib(~ stype, dweight = pw, data = apisrs,
 #                                const = pop.totals, method = "DS", entropy = "SL")
 # 
 # n = nrow(apisrs); N = sum(apisrs$pw)
@@ -159,3 +149,53 @@
 # GECal::estimate(api00 ~ 1, data = apisrs, calibration = calibration,
 #                 pimat = pimat * N^2)
 # 
+
+# devtools::check(manual = T, document = T)
+# GECal::GEcalib()
+# lm
+# sampling::calib()
+# 
+# survey::svydesign()
+# 
+# survey::calibrate()
+# 
+# 
+# N = 10000
+# x = data.frame(x1 = rnorm(N, 2, 1), x2= runif(N, 0, 4))
+# pi = pt((-x[,1] / 2 - x[,2] / 2), 3);
+# pi = ifelse(pi >.7, .7, pi)
+# 
+# delta = rbinom(N, 1, pi)
+# Index_S = (delta == 1)
+# n = sum(Index_S); #print(n)
+# pi_S = pi[Index_S]; d_S = 1 / pi_S
+# x_S = x[Index_S,,drop = F]
+# # pimat_S = diag(d_S^2 - d_S) / N^2 # 1 / pi_i * (1 - 1 / pi_i)
+# 
+# w <- GECal::GEcalib(~ ., dweight = d_S, data = x_S, 
+#                     const = colSums(cbind(1, x)),
+#                     entropy = "ET", method = "DS")$w
+# 
+# w <- GECal::GEcalib(~ ., dweight = d_S, data = x_S, 
+#                     const = colSums(cbind(1, x)),
+#                     entropy = "ET", method = "GEC0")$w
+# 
+# w <- GECal::GEcalib(~ . + g(d_S), dweight = d_S, data = x_S, 
+#                     const = colSums(cbind(1, x, log(1 / pi))),
+#                     entropy = "ET", method = "GEC")$w
+# 
+# w <- GECal::GEcalib(~ . + g(d_S), dweight = d_S, data = x_S, 
+#                     const = colSums(cbind(1, x, NA)),
+#                     entropy = "ET", method = "GEC")$w
+# 
+# tmp <- GECal::GEcalib(~ . + g(d_S), dweight = d_S, data = x_S, 
+#                       const = colSums(cbind(1, x, NA)),
+#                       entropy = "ET", method = "GEC")
+# names(tmp)
+# 
+# 
+# e = rnorm(N, 0, 1)
+# y = x[,1] + x[,2] + e;
+# y_S = y[Index_S] # plot(x_S, y_S)
+# # data_S = cbind(pi, data)[Index_S,]
+

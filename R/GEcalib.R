@@ -1,39 +1,87 @@
 #' @title Generalized Entropy Calibration
 #' 
 #' @description
-#' \code{GEcalib} computes the generalized entropy calibration weight proposed by Kwon et.al.(2024).
-#' The \code{GEcalib} weight minimizes the negative generalized entropy:
-#' \deqn{\sum_{i \in A} G(\omega_i)}
-#' subject to the calibration constraints \eqn{\sum_{i \in A} \omega_i \bm z_i = \sum_{i \in U} \bm z_i},
-#' where \eqn{A} is the index of sample, \eqn{U} is the index of population, and
-#' \eqn{\bm z_i^T = (\bm x_i^T, g(d_i))} are the auxiliary variables whose population totals are known.
+#' \code{GEcalib} computes the generalized entropy calibration weights as proposed by Kwon et al. (2024).
+#' These weights maximize the generalized entropy:
+#' \deqn{H(\bm{\omega}) = -\sum_{i \in A} G(\omega_i),}
+#' subject to the calibration constraints \eqn{\sum_{i \in A} \omega_i \bm{z}_i = \sum_{i \in U} \bm{z}_i},
+#' where \eqn{A} denotes the sample index, and \eqn{U} represents the population index. 
+#' The auxiliary variables, whose population totals are known, are defined as \eqn{\bm{z}_i^T = (\bm{x}_i^T, g(d_i))}, 
+#' where \eqn{d_i} is the design weight for each sample \eqn{i \in A}.
 #' 
 #' @import nleqslv
 #' @importFrom sampling calib
-#'
-#' @param Xs A matrix of auxiliary variables.
-#' @param total A vector of population totals.
-#' @param d An optional vector of initial weights.
-#' @param entropy An entropy function(Squared-loss:"SL", Empirical Likelihood: "EL", Exponential Tilting: "ET", Cross-Entropy: "CE", Helinger Distance: "HD", "PH")
-#' @param method an optional vector that can be used in \code{nleqslv}.
-#' @param control an optional list that can be used in \code{nleqslv}.
 #' 
-#' @return A vector of calibration weights.
+#' @param formula An object of class "formula" specifying the calibration model. 
+#' @param dweight A vector of sampling weights.
+#' @param data An optional data frame containing the variables in the model (specified by \code{formula}).
+#' @param const A vector used in the calibration constraint for population totals( or means).
+#' @param method The method to be used in calibration. See "Details" for more information.
+#' @param entropy The generalized entropy used in calibration, which can be either a numeric value or a string. 
+#' If numeric, \code{entropy} represents the order of Renyi's entropy, where 
+#' \eqn{G(\omega) = r^{-1}(r+1)^{-1}\omega^{r+1}} if \eqn{r \neq 0, -1}.
+#' If a string, valid options include: 
+#' "SL" (Squared-loss), "EL" (Empirical Likelihood), "ET" (Exponential Tilting), 
+#' "CE" (Cross-Entropy), "HD" (Hellinger Distance), and "PH" (Pseudo-Huber).
+#' @param weight.scale Scaling factor for the calibration weights \eqn{\omega_i}. Asymptotics justify setting \code{weight.scale} 
+#' to the finite population correction (\eqn{fpc = n / N}).
+#' @param G.scale Scaling factor for the generalized entropy function \eqn{G}. Asymptotics justify setting 
+#' \code{G.scale} to the variance of the error term in a linear super-population model.
+#' @param K_alpha The \eqn{K} function used in joint optimization when the \code{const} of the debiasing covariate 
+#' \eqn{g(d_i)} is not available.
+#' @param is.total Logical, \code{TRUE} if \code{sum(const[1])} equals the population size.
+#' @param del The threshold (\eqn{\delta}) used when Pseudo-Huber (PH) entropy is selected.
+#' 
+#' @return A list including the calibration weights and data needed for estimation.
+#' 
+#' @details Let \eqn{q_i} be the scaling factor for the generalized entropy function \eqn{G}, 
+#' and \eqn{\phi_i} be the scaling factor for the calibration weights \eqn{\omega_i}.
+#' 
+#' If \code{method} == "GEC", \code{GEcalib} minimizes the negative entropy:
+#' \deqn{\sum_{i \in A} q_iG(\phi_i\omega_i),}
+#' with respect to \eqn{\bm \omega} subject to the calibration constraints \eqn{\sum_{i \in A} \omega_i \bm{z}_i = \sum_{i \in U} \bm{z}_i},
+#' where \eqn{\bm{z}_i^T = (\bm{x}_i^T, q_i \phi_i g(q_i \phi_i d_i))},\eqn{A} denotes the sample index, and \eqn{U} represents the population index. 
+#' 
+#' If \code{method} == "GEC", but an element of \code{const} corresponding to the debiasing covariate 
+#' \eqn{g(d_i)} is \code{NA}, \code{GEcalib} minimizes the negative adjusted entropy:
+#' \deqn{\sum_{i \in A} q_iG(\phi_i\omega_i) - K(\alpha),}
+#' with respect to \eqn{\bm \omega} and \eqn{\alpha} subject to the calibration constraints 
+#' \eqn{\sum_{i \in A} \omega_i (\bm{x}_i^T, q_i \phi_i g(q_i \phi_i d_i)) = \left(\sum_{i \in U} \bm x_i, \alpha \right)},
+#' where the solution \eqn{\hat \alpha} is an estimate of population total for \eqn{g(d_i)}.
+#' Examples of \eqn{K(\alpha)} includes \eqn{K(\alpha) = \alpha} and 
+#' \deqn{K(\alpha) = \left(\sum_{i \in A} d_i g(d_i) + N \right) 
+#' \log \left| \frac{1}{N}\sum_{i \in A}q_i \phi_i \omega_i g(\phi_i \omega_i) + 1  \right|}.
+#' 
+#' If \code{method} == "GEC0", \code{GEcalib} minimizes the negative adjusted entropy:
+#' \deqn{\sum_{i \in A} q_iG(\phi_i\omega_i) - q_i\phi_i\omega_i g(\phi_i \omega_i)}
+#' with respect to \eqn{\bm \omega} subject to the calibration constraints \eqn{\sum_{i \in A} \omega_i \bm{x}_i = \sum_{i \in U} \bm{x}_i}.
+#' 
+#' If \code{method} == "DS", \code{GEcalib} minimizes the divergence between \eqn{\bm \omega} and \eqn{\bm d}:
+#' \deqn{\sum_{i \in A} q_id_i \tilde G(\omega_i / d_i)}
+#' with respect to \eqn{\bm \omega} subject to the calibration constraints \eqn{\sum_{i \in A} \omega_i \bm{x}_i = \sum_{i \in U} \bm{x}_i}. 
+#' When \code{method} == "DS", the scaling factor for the calibration weights \eqn{\phi_i} is not applicable.
+#' 
+#' Examples of \eqn{G} and \eqn{\tilde G} are given in "Summary".
 #' 
 #' @section Summary:
 #' 
 #' \tabular{cc}{
 #' \strong{GEC} \tab \strong{DS} \cr
 #' \eqn{\min_{\bm \omega} \left(-H(\bm \omega)\right) = \sum_{i \in A}G(\omega_i) \quad} \tab 
-#' \eqn{\quad \min_{\bm \omega} D(\bm \omega, \bm d) = \sum_{i \in A}d_iG(\omega_i / d_i)} \cr
-#' \deqn{G(\omega) = \begin{cases} \frac{1}{r(r+1)} \omega^{r+1} & r \neq 0, -1\\ 
+#' \eqn{\quad \min_{\bm \omega} D(\bm \omega, \bm d) = \sum_{i \in A}d_i \tilde G(\omega_i / d_i)} \cr
+#' \eqn{G(\omega) = \begin{cases} \frac{1}{r(r+1)} \omega^{r+1} & r \neq 0, -1\\ 
 #' \omega \log \omega - \omega & r = 0\text{(ET)} \\ 
 #' -\log \omega & r = -1\text{(EL)} \end{cases}} 
-#' \tab \deqn{G(\omega) = \begin{cases} \frac{1}{r(r+1)} \left(\omega^{r+1} - (r+1)\omega + r\right) & r \neq 0, -1 \\
+#' \tab \eqn{\tilde G(\omega) = \begin{cases} \frac{1}{r(r+1)} \left(\omega^{r+1} - (r+1)\omega + r\right) & r \neq 0, -1 \\
 #' \omega \log \omega - \omega + 1 & r = 0\text{(ET)} \\
 #' -\log \omega + \omega - 1 & r = -1\text{(EL)} \end{cases}} \cr
 #' }
 #' 
+#' If \code{method} == "GEC", further examples include
+#' \deqn{G(\omega) = (\omega - 1) \log (\omega-1) - \omega \log \omega}
+#' if \code{entropy} == "CE" and
+#' \deqn{G(\omega) = \delta^2 \left(1 + (\omega / \delta)^2 \right)^{1/2}}
+#' for a threshold \eqn{\delta} if \code{entropy} == "PH".
 #' 
 #' @references
 #' Kwon, Y., Kim, J., & Qiu, Y. (2024). Debiased calibration estimation using generalized entropy in survey sampling.
@@ -43,24 +91,36 @@
 #' Journal of the American statistical Association, 87(418), 376-382.
 #' 
 #' @examples
-#' Xs=cbind(
-#'   c(1,1,1,1,1,1,1,1,1,1),
-#'   c(1,1,1,1,1,0,0,0,0,0),
-#'   c(1,2,3,4,5,6,7,8,9,10)
-#' )
-#' # inclusion probabilities
-#' piks=rep(0.2,times=10); d=1/piks
-#' # vector of population totals
-#' total=c(50,24,290)
+#' N = 10000
+#' x = data.frame(x1 = rnorm(N, 2, 1), x2= runif(N, 0, 4))
+#' pi = pt((-x[,1] / 2 - x[,2] / 2), 3);
+#' pi = ifelse(pi >.7, .7, pi)
 #' 
-#' # Calibration weights
-#' # calib(Xs, total, d = d, method="raking") * d
-#' GEcalib(Xs, total, d, entropy = "ET")
-#' GEcalib(Xs, total, entropy = "ET")
+#' delta = rbinom(N, 1, pi)
+#' Index_S = (delta == 1)
+#' pi_S = pi[Index_S]; d_S = 1 / pi_S
+#' x_S = x[Index_S,]
 #' 
-#' # calib(Xs, total, d = d, method="linear") * d
-#' GEcalib(Xs, total, d, entropy = "SL")
-#' GEcalib(Xs, total, entropy = "SL")
+#' # Deville & Sarndal(1992)'s calibration using divergence
+#' w1 <- GECal::GEcalib(~ ., dweight = d_S, data = x_S,
+#'                     const = colSums(cbind(1, x)),
+#'                     entropy = "ET", method = "DS")$w
+#' 
+#' # Generalized entropy calibration without debiasing covariate 
+#' w2 <- GECal::GEcalib(~ ., dweight = d_S, data = x_S,
+#'                     const = colSums(cbind(1, x)),
+#'                     entropy = "ET", method = "GEC0")$w
+#' 
+#' # Generalized entropy calibration with debiasing covariate
+#' w3 <- GECal::GEcalib(~ . + g(d_S), dweight = d_S, data = x_S,
+#'                     const = colSums(cbind(1, x, log(1 / pi))),
+#'                     entropy = "ET", method = "GEC")$w
+#' 
+#' # Generalized entropy calibration with debiasing covariate
+#' # when its population total is unknown
+#' w4 <- GECal::GEcalib(~ . + g(d_S), dweight = d_S, data = x_S,
+#'                     const = colSums(cbind(1, x, NA)),
+#'                     entropy = "ET", method = "GEC")$w
 
 #' @export
 GEcalib = function(formula, dweight, data = NULL, const, 
@@ -69,8 +129,7 @@ GEcalib = function(formula, dweight, data = NULL, const,
                     # weight.bound = NULL, 
                    weight.scale = 1, G.scale = 1,
                     # opt.method = c("nleqslv", "optim", "CVXR"),
-                    del = NULL,
-                    K_alpha = NULL, is.total = T
+                    K_alpha = NULL, is.total = T, del = NULL
 ){
   entropy <- if (is.numeric(entropy)) {
     entropy  # Assign entropy directly if it's numeric
