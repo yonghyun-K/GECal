@@ -2,6 +2,7 @@
 
 export(GEcalib)
 export(calculate_mean)
+export(estimate)
 export(g)
 import(nleqslv)
 importFrom(sampling,calib)

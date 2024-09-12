@@ -5,24 +5,29 @@
 \title{Generalized Entropy Calibration}
 \usage{
 GEcalib(
-  Xs,
-  total,
-  d = NULL,
+  formula,
+  dweight,
+  data = NULL,
+  const,
+  method = c("GEC", "GEC0", "DS"),
   entropy = c("SL", "EL", "ET", "CE", "HD", "PH"),
-  method = "Newton",
-  control = list(maxit = 1e+05, allowSingular = T)
+  weight.scale = 1,
+  G.scale = 1,
+  del = NULL,
+  K_alpha = NULL,
+  is.total = T
 )
 }
 \arguments{
+\item{method}{an optional vector that can be used in \code{nleqslv}.}
+
+\item{entropy}{An entropy function(Squared-loss:"SL", Empirical Likelihood: "EL", Exponential Tilting: "ET", Cross-Entropy: "CE", Helinger Distance: "HD", "PH")}
+
 \item{Xs}{A matrix of auxiliary variables.}
 
 \item{total}{A vector of population totals.}
 
 \item{d}{An optional vector of initial weights.}
-
-\item{entropy}{An entropy function(Squared-loss:"SL", Empirical Likelihood: "EL", Exponential Tilting: "ET", Cross-Entropy: "CE", Helinger Distance: "HD", "PH")}
-
-\item{method}{an optional vector that can be used in \code{nleqslv}.}
 
 \item{control}{an optional list that can be used in \code{nleqslv}.}
 }
@@ -35,7 +40,7 @@ The \code{GEcalib} weight minimizes the negative generalized entropy:
 \deqn{\sum_{i \in A} G(\omega_i)}
 subject to the calibration constraints \eqn{\sum_{i \in A} \omega_i \bm z_i = \sum_{i \in U} \bm z_i},
 where \eqn{A} is the index of sample, \eqn{U} is the index of population, and
-\eqn{\bm z_i} are the auxiliary variables whose population totals are known.
+\eqn{\bm z_i^T = (\bm x_i^T, g(d_i))} are the auxiliary variables whose population totals are known.
 }
 \section{Summary}{
 
