@@ -1,8 +1,9 @@
-GEcalib2 = function(formula, dweight, data = NULL, const, method = c("GEC", "GEC0", "DS"),
+GEcalib2 = function(formula, dweight, data = NULL, const, 
+  method = c("GEC", "GEC0", "DS"),
   entropy = c("SL", "EL", "ET", "CE", "HD", "PH"), 
   weight.bound = NULL, weight.scale = 1,
   opt.method = c("nleqslv", "optim", "CVXR"),
-  del = quantile(dweight, 0.75),
+  del = NULL,
   K_alpha = NULL, is.total = T
 ){
   entropy <- if (is.numeric(entropy)) {
@@ -15,19 +16,21 @@ GEcalib2 = function(formula, dweight, data = NULL, const, method = c("GEC", "GEC
     )
   }
 
+  environment(g) <- environment(); environment(formula) <- environment()
+  
   if (is.null(data)) {
     assign("entropy", entropy, envir = sys.frame())
     assign("del", del, envir = sys.frame())
-    environment(g) <- environment(); environment(formula) <- environment()
     mf <- model.frame(formula, parent.frame())  # Evaluate in parent environment
     dweight0 = dweight
   } else {    
     assign("entropy", entropy, envir = environment())
     assign("del", del, envir = environment())
-    environment(g) <- environment(); environment(formula) <- environment()
     mf <- model.frame(formula, data)  # Evaluate in the provided data
-    dweight0 = data$dweight
+    dweight0 = eval(substitute(dweight), envir = data)
   }
+  
+  if(!is.null(del)) del = quantile(dweight0, 0.75)
 
   Xs <- model.matrix(attr(mf, "terms"), mf)
   if(rcond(Xs) < .Machine$double.eps){
@@ -44,11 +47,24 @@ GEcalib2 = function(formula, dweight, data = NULL, const, method = c("GEC", "GEC
   # Find the location of the column in the model matrix
   col_position <- which(colnames(Xs) == transformed_name)
   
+  if(length(weight.scale) == 0) stop("weight.scale has to be positive length")
+  if(method == "GEC"){
+    if(length(col_position) == 0){
+      stop("Method GEC needs g(dweight) in the formula")
+    } 
+    if(any(weight.scale != 1)){
+      if(any(weight.scale <= 0)) stop("weight.scale has to be positive")
+      Xs[,col_position] <- weight.scale * Xs[,col_position]
+    }
+  }
+  
+
+  
   if(method == "GEC" & length(col_position) == 0){
     stop("Method GEC needs g(dweight) in the formula")
   } 
   
-  What = sum(g(dweight0, entropy = entropy, del = del) * dweight0)
+  What = sum(g(dweight0 * weight.scale, entropy = entropy, del = del) * dweight0 / weight.scale)
   if(is.total & attr(attr(mf, "terms"), "intercept") == 1 & !is.null(K_alpha)){
     N = const[1]
     K_alpha = function(x) (What + N) * log(abs(x / N + 1))
@@ -59,24 +75,24 @@ GEcalib2 = function(formula, dweight, data = NULL, const, method = c("GEC", "GEC
   init = rep(0, length(const))
   if(method == "GEC"){
     init[col_position] = 1
-    d = rep(1, nrow(Xs))
+    d = rep(1 / weight.scale, nrow(Xs))
     intercept = rep(0, length(d))
   }else if(method == "DS"){
-    d = dweight0
+    d = dweight0 / weight.scale
     if(entropy == 0){
       intercept = rep(0, length(d))      
     }else{
       intercept = rep(1, length(d))
     }
   }else if(method == "GEC0"){
-    d = rep(1, nrow(Xs))
-    intercept = g(dweight0, entropy = entropy, del = del)
+    d = rep(1 / weight.scale, nrow(Xs))
+    intercept = g(dweight0 * weight.scale, entropy = entropy, del = del)
   }
   
   if(any(is.na(const)) & method == "GEC"){
     if(all(which(is.na(const)) == col_position)){
       nlmres= nlm(targetftn, p = What, d = d, Xs = Xs, init = init,
-                  const = const, entropy = entropy, del = del,
+                  const = const, entropy = entropy, del = del, 
                   intercept = intercept, K_alpha = K_alpha)
       # if(nlmres$code != 1 & nlmres$code != 2 & nlmres$code != 3) print(nlmres$estimate)
       if(nlmres$code != 1 & nlmres$code != 2 & nlmres$code != 3) stop(nlmres$code)
@@ -94,20 +110,23 @@ GEcalib2 = function(formula, dweight, data = NULL, const, method = c("GEC", "GEC
     }
   }else{
     nleqslv_res = nleqslv::nleqslv(init, f, jac = h, d = d, Xs = Xs, 
-                                   const = const, entropy = entropy, del = del,
+                                   const = const, entropy = entropy, del = del, 
                                    intercept = intercept, control = list(maxit = 1e5, allowSingular = T),
                                    xscalm = "auto")
     # control = control
     
     if(nleqslv_res$termcd != 1){
+      # print("Xs"); print(head(Xs))
+      # print("d"); print(d)
+      # print(      return(f(init, d = d, Xs = Xs,
+      #                      const = const, entropy = entropy, del = del,
+      #                      intercept = intercept)))
       tmpval <- f(nleqslv_res$x, d = d, Xs = Xs, 
-                  const = const, entropy = entropy, del = del,
+                  const = const, entropy = entropy, del = del, 
                   intercept = intercept)
-      # return(f(init, d = d, Xs = Xs, 
-      #          const = const, entropy = entropy, del = del,
-      #          intercept = intercept))
       
       if(any(is.nan(tmpval)) | (max(abs(tmpval)) > 1e-5)){
+        print(nleqslv_res)
         w = NA      
       }else{
         w = NULL
@@ -117,7 +136,7 @@ GEcalib2 = function(formula, dweight, data = NULL, const, method = c("GEC", "GEC
     }
     if(is.null(w)){
       w = f(nleqslv_res$x, d = d, Xs = Xs, 
-            const = const, entropy = entropy, del = del,
+            const = const, entropy = entropy, del = del, 
             intercept = intercept, returnw = T)    
     }
   }
