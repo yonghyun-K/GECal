@@ -12,6 +12,7 @@
 #' 
 #' @import nleqslv
 #' @importFrom sampling calib
+#' @importFrom stats model.frame model.matrix nlm quantile
 #' 
 #' @param formula An object of class "formula" specifying the calibration model. 
 #' @param dweight A vector of sampling weights.
