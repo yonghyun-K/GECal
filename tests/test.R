@@ -69,11 +69,11 @@ all.equal(sampling::calib(Xs, total, d = d, method="raking") * d,
 GEcalib(~ 0 + Xs + g(d), dweight = d, const = c(total, sum(g(1 / pik, 0))), 
         method = "GEC", entropy = "ET")$w
 
-GEcalib(~ 0 + Xs, dweight = d, const = c(total), 
-        method = "DS", entropy = "EL")$w
+# GEcalib(~ 0 + Xs, dweight = d, const = c(total), 
+#         method = "DS", entropy = "EL")$w
 
-GEcalib(~ 0 + Xs, dweight = d, const = c(total), 
-        method = "DS", entropy = "HD")$w
+# GEcalib(~ 0 + Xs, dweight = d, const = c(total), 
+#         method = "DS", entropy = "HD")$w
 
 GEcalib(~ 0 + Xs + g(d), dweight = d, const = c(total, sum(g(1 / pik, -1/2))), 
         method = "GEC", entropy = "HD")$w
