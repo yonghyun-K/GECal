@@ -55,6 +55,7 @@
 #'                                entropy = "ET", method = "GEC0")
 #' GECal::estimate(y_S ~ 1, calibration = calibration2)$estimate
 #' 
+#' \donttest{
 #' calibration3 <- GECal::GEcalib(~ . + g(d_S), dweight = d_S, data = x_S,
 #'                                const = colSums(cbind(1, x, log(1 / pi))),
 #'                                entropy = "ET", method = "GEC")
@@ -69,21 +70,33 @@
 #'                                const = colSums(cbind(1, x, NA)),
 #'                                entropy = "ET", method = "GEC", K_alpha = "log")
 #' GECal::estimate(y_S ~ 1, calibration = calibration5)$estimate
+#' }
 #' 
 #' @export
 estimate <- function(formula, data = NULL, calibration, pimat = NULL){
+  
   response_vars <- all.vars(formula[[2]])
   
-  # If data is provided, extract the variables from the data
-  if (!is.null(data)) {
-    # Extract the columns from the data corresponding to the response variables
-    ys <- do.call(cbind, lapply(response_vars, function(var) data[[var]]))
+  environment(formula) <- environment()
+  
+  if (is.null(data)) {
+    mf <- model.frame(formula, parent.frame())  # Evaluate in parent environment
   } else {
-    # If no data is provided, evaluate the variables in the global environment
-    ys <- do.call(cbind, lapply(response_vars, function(var) eval(parse(text = var))))
+    mf <- model.frame(formula, data)  # Evaluate in the provided data
   }
   
-  if(class(calibration) != "calibration"){
+  ys <- as.matrix.data.frame(mf[,response_vars, drop = FALSE])
+  
+  # # If data is provided, extract the variables from the data
+  # if (!is.null(data)) {
+  #   # Extract the columns from the data corresponding to the response variables
+  #   ys <- do.call(cbind, lapply(response_vars, function(var) data[[var]]))
+  # } else {
+  #   # If no data is provided, evaluate the variables in the global environment
+  #   ys <- do.call(cbind, lapply(response_vars, function(var) eval(parse(text = var), envir = parent.frame())))
+  # }
+  
+  if (!inherits(calibration, "calibration")){
     stop("Object calibration is not a class \"calibration\".")
   }
   

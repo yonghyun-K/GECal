@@ -26,11 +26,11 @@ g = function(x, entropy = NULL, del = NULL){
   if(is.null(entropy)){
     if(!exists("entropy", envir = parent.frame())) stop("Specify entropy in g function.")
       entropy <- get("entropy", envir = parent.frame())
-  }  
+  }
   if(entropy == "PH" & is.null(del)){
     if(!exists("del", envir = parent.frame())) stop("Specify del in g function.")
     del <- get("del", envir = parent.frame())
-  }  
+  }
 
   if (is.numeric(entropy)) {
     # if(!(entropy > 0 & entropy %% 2 == 1) & any(x < 0)) return(rep(Inf, length(x)))

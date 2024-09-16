@@ -11,7 +11,6 @@
 #' and \eqn{d_i} is the design weight for each sampled unit \eqn{i \in A}.
 #' 
 #' @import nleqslv
-#' @importFrom sampling calib
 #' @importFrom stats model.frame model.matrix nlm quantile
 #' 
 #' @param formula An object of class "formula" specifying the calibration model. 
@@ -106,7 +105,7 @@
 #' 
 #' @references
 #' Kwon, Y., Kim, J., & Qiu, Y. (2024). Debiased calibration estimation using generalized entropy in survey sampling.
-#' Arxiv preprint <https://arxiv.org/abs/2404.01076>
+#' Arxiv preprint <\url{https://arxiv.org/abs/2404.01076}>
 #' 
 #' Deville, J. C., and Särndal, C. E. (1992). Calibration estimators in survey sampling.
 #' Journal of the American statistical Association, 87(418), 376-382.
@@ -133,6 +132,7 @@
 #'                     entropy = "ET", method = "GEC0")$w
 #' all.equal(w1, w2)
 #' 
+#' \donttest{
 #' # Generalized entropy calibration with debiasing covariate
 #' w3 <- GECal::GEcalib(~ . + g(d_S), dweight = d_S, data = x_S,
 #'                     const = colSums(cbind(1, x, log(1 / pi))),
@@ -148,6 +148,7 @@
 #' w5 <- GECal::GEcalib(~ . + g(d_S), dweight = d_S, data = x_S,
 #' const = colSums(cbind(1, x, NA)),
 #' entropy = "ET", method = "GEC", K_alpha = "log")$w                     
+#' }
 
 
 #' @export
@@ -170,17 +171,26 @@ GEcalib = function(formula, dweight, data = NULL, const,
   }
   
   environment(g) <- environment(); environment(formula) <- environment()
-  
+
   if (is.null(data)) {
-    assign("entropy", entropy, envir = sys.frame())
-    assign("del", del, envir = sys.frame())
+    # assign("entropy", entropy, envir = sys.frame())
+    # assign("del", del, envir = sys.frame())
+    assign("entropy", entropy, envir = parent.frame())
+    assign("del", del, envir = parent.frame())
     mf <- model.frame(formula, parent.frame())  # Evaluate in parent environment
     dweight0 = dweight
-  } else {    
+  } else {
     assign("entropy", entropy, envir = environment())
     assign("del", del, envir = environment())
-    mf <- model.frame(formula, data)  # Evaluate in the provided data
-    dweight0 = eval(substitute(dweight), envir = data)
+    dweight_name <- deparse(substitute(dweight))
+    if(exists(dweight_name, where = data)){
+      dweight0 = eval(substitute(dweight), envir = data)
+    }else{
+      dweight0 = dweight
+    }
+    # data <- cbind(data, dweight_name = dweight)
+    
+    mf <- model.frame(formula, data = data)  # Evaluate in the provided data
   }
   
   if(!is.null(del)) del = quantile(dweight0, 0.75)
@@ -235,7 +245,7 @@ GEcalib = function(formula, dweight, data = NULL, const,
     if(entropy == 0){
       intercept = rep(0, length(d))      
     }else{
-      intercept = rep(1, length(d))
+      intercept = rep(1 / entropy, length(d))
     }
   }else if(method == "GEC0"){
     d = rep(1, nrow(Xs))
@@ -256,6 +266,7 @@ GEcalib = function(formula, dweight, data = NULL, const,
         W = nlmres$estimate
         if(nlmres$minimum >= .Machine$double.xmax){
           warning("Convergence failed")
+          print("Messeage from nlm")
           print(nlmres)
           w = NA
         }else{
@@ -288,7 +299,8 @@ GEcalib = function(formula, dweight, data = NULL, const,
         
         if(any(is.nan(tmpval)) | (max(abs(tmpval)) > 1e-5)){
           warning("Convergence failed")
-          print(nleqslv_res)
+          print("Messeage from nleqslv")
+          print(nleqslv_res$message)
           w = NA      
         }else{
           w = NULL

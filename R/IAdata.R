@@ -1,0 +1,67 @@
+#' Synthetic pesticides data in Iowa
+#'
+#' A synthetic proprietary pesticide usage survey data in Iowa CRD(Crop Reporting District) collected from GfK Kynetec in 2020.
+#' 
+#' The original data is contaminated by adding noise and creating missing values and imputation.
+#'
+#' @name IAdata
+#' @docType data
+#' @format A data frame with 1197 rows on the following 30 variables:\describe{
+#' \item{Corn10, Corn20, Corn30, Corn40, Corn50, Corn60, Corn70}{Haversted acres of corn in each CRD}
+#' \item{Soybean10, Soybean20, Soybean30, Soybean40, Soybean50, Soybean60,
+#' Soybean70, Soybean90}{Haversted acres of soybean in each CRD}
+#' \item{Alfalfa10, Alfalfa30, Alfalfa40, Alfalfa50, 
+#' Alfalfa70, Alfalfa80}{Haversted acres of alfalfa in each CRD}
+#' \item{Pasture10, Pasture20, Pasture30, Pasture40,
+#' Pasture50, Pasture60, Pasture70, Pasture80,
+#' Pasture90}{Acres of pasture in each CRD}
+#' \item{d}{Design weights, or inverse first-order inclusion probabilities of the sample}
+#' \item{y}{Pesticide usage($) which is of an interest.}
+#' ...
+#' }
+#'
+#' @keywords datasets
+#' @examples
+#' data(IAdata)
+#' data(IApimat)
+#' 
+#' total <- c(
+#' Corn10 = 2093000, Corn20 = 1993600, Corn30 = 1803200, Corn40 = 2084600, 
+#' Corn50 = 2056600, Corn60 = 1429400, Corn70 = 2539600,
+#' Soybean10 = 1472980, Soybean20 = 1192860, Soybean30 = 721920, 
+#' Soybean40 = 1477680, Soybean50 = 1353600, Soybean60 = 918380,
+#' Soybean70 = 1485200, Soybean90 = 777380, Alfalfa10 = 60590, 
+#' Alfalfa30 = 154395, Alfalfa40 = 57816, Alfalfa50 = 150453,
+#' Alfalfa70 = 66065, Alfalfa80 = 240681, Pasture10 = 141947, 
+#' Pasture20 = 61476, Pasture30 = 188310, Pasture40 = 213635,
+#' Pasture50 = 160737, Pasture60 = 222214, Pasture70 = 250807, 
+#' Pasture80 = 570647, Pasture90 = 232630
+#' )
+#'
+#' calibration <- GECal::GEcalib(~ 0 -y -d, dweight = d, data = IAdata,
+#'                               const = numeric(0),
+#'                               entropy = "EL", method = "DS")
+#' GECal::estimate(y ~ 1, data = IAdata, calibration = calibration, pimat = IApimat)$estimate
+#' 
+#' 
+#' calibration <- GECal::GEcalib(~ 0 + . -y -d, dweight = d, data = IAdata,
+#'                               const = total,
+#'                               entropy = "SL", method = "DS")
+#' GECal::estimate(y ~ 1, data = IAdata, calibration = calibration, pimat = IApimat)$estimate
+#' 
+#' calibration <- GECal::GEcalib(~ 0 + . -y -d, dweight = d, data = IAdata,
+#'                               const = c(total),
+#'                               entropy = "ET", method = "DS")
+#' GECal::estimate(y ~ 1, data = IAdata, calibration = calibration, pimat = IApimat)$estimate
+#' 
+#' 
+#' calibration <- GECal::GEcalib(~ 0 + . -y -d + g(d), dweight = d, data = IAdata,
+#'                               const = c(total, NA),
+#'                               entropy = "HD", method = "GEC")
+#' GECal::estimate(y ~ 1, data = IAdata, calibration = calibration, pimat = IApimat)$estimate
+#' 
+#' calibration <- GECal::GEcalib(~ 0 + . -y -d, dweight = d, data = IAdata,
+#'                               const = total,
+#'                               entropy = "HD", method = "GEC0")
+#' GECal::estimate(y ~ 1, data = IAdata, calibration = calibration, pimat = IApimat)$estimate
+NULL
