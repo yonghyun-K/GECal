@@ -72,8 +72,10 @@ GECal::estimate(y_S ~ 1, calibration = calibration5)$estimate
 ## Externel Links
 <!--
 -->
-- [CRAN Task View: Official Statistics & Survey Statistics](https://cran.r-project.org/web/views/OfficialStatistics.html)
+- [CRAN Task View: Official Statistics & Survey Statistics](https://CRAN.R-project.org/view=OfficialStatistics)
 
-- [sampling](https://cran.r-project.org/web/packages/sampling/)
+- [survey](https://CRAN.R-project.org/package=survey)
 
-- [laeken](https://cran.r-project.org/web/packages/laeken/)
+- [sampling](https://CRAN.R-project.org/package=sampling)
+
+- [laeken](https://CRAN.R-project.org/package=laeken)
