@@ -98,11 +98,15 @@ GECal:::GEcalib(~ g(d), dweight = d,
                  method = "GEC", entropy = "PH", del = quantile(d, 0.5))$w
 
 GECal:::GEcalib(~ g(d), dweight = d,
-                 const = c(150, sum(g(d, entropy = "PH", del = quantile(d, 1)) * d)),
-                 method = "GEC", entropy = "PH", del = quantile(d, 1))
+                const = c(150, sum(g(d, entropy = "PH", del = quantile(d, 0.8)) * d)),
+                method = "GEC", entropy = "PH", del = quantile(d, 0.8))$w
 
 GECal:::GEcalib(~ g(d), dweight = d,
-                 const = c(150, NA), method = "GEC", entropy = "SL")$w
+                 const = c(150, sum(g(d, entropy = "PH", del = quantile(d, 1)) * d)),
+                 method = "GEC", entropy = "PH", del = quantile(d, 1))$w
+
+GECal:::GEcalib(~ g(d), dweight = d,
+                 const = c(150, sum(g(d, entropy = 1) * d)), method = "GEC", entropy = "SL")$w
 
 
 GECal:::GEcalib(~ g(d), dweight = d, G.scale = c(rep(c(1,2), 5)),

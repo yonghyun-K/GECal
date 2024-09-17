@@ -6,7 +6,7 @@
 #'
 #' @name IAdata
 #' @docType data
-#' @format A data frame with 1197 rows on the following 30 variables:\describe{
+#' @format A data frame with 1197 rows on the following 32 variables:\describe{
 #' \item{Corn10, Corn20, Corn30, Corn40, Corn50, Corn60, Corn70}{Haversted acres of corn in each CRD}
 #' \item{Soybean10, Soybean20, Soybean30, Soybean40, Soybean50, Soybean60,
 #' Soybean70, Soybean90}{Haversted acres of soybean in each CRD}
@@ -17,7 +17,6 @@
 #' Pasture90}{Acres of pasture in each CRD}
 #' \item{d}{Design weights, or inverse first-order inclusion probabilities of the sample}
 #' \item{y}{Pesticide usage($) which is of an interest.}
-#' ...
 #' }
 #'
 #' @keywords datasets

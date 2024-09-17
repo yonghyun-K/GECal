@@ -133,8 +133,8 @@ estimate <- function(formula, data = NULL, calibration, pimat = NULL){
                                           del = del) / G.scale / weight.scale^2)
       xcolums = sequence(ncol(Xs))[-col_position]; gcolums = col_position
       hatSigmaxx = hatSigmazz[xcolums, xcolums]
-      hatSigmagx = hatSigmazz[gcolums, xcolums, drop = F]
-      hatSigmagg = hatSigmazz[gcolums, gcolums, drop = F]
+      hatSigmagx = hatSigmazz[gcolums, xcolums, drop = FALSE]
+      hatSigmagg = hatSigmazz[gcolums, gcolums, drop = FALSE]
       hatSigmagg_x = drop(hatSigmagg - hatSigmagx %*% solve(hatSigmaxx, t(hatSigmagx)))
       
       if(identical(K_alpha, identity)){

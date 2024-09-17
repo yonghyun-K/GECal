@@ -24,8 +24,13 @@
 #' @export
 g = function(x, entropy = NULL, del = NULL){
   if(is.null(entropy)){
-    if(!exists("entropy", envir = parent.frame())) stop("Specify entropy in g function.")
+    if(exists("entropy", envir = sys.frame())){
+      entropy <- get("entropy", envir = sys.frame())      
+    }else if(exists("entropy", envir = parent.frame())){
       entropy <- get("entropy", envir = parent.frame())
+    }else{
+      stop("Specify entropy in g function.")      
+    }
   }
   if(entropy == "PH" & is.null(del)){
     if(!exists("del", envir = parent.frame())) stop("Specify del in g function.")

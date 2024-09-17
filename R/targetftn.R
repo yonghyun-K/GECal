@@ -1,5 +1,5 @@
 targetftn = function(W, d, Xs, init, const, entropy, del, intercept, K_alpha, 
-                     weight.scale, G.scale,..., returnw = F){
+                     weight.scale, G.scale,..., returnw = FALSE){
   if (is.numeric(entropy)) {
     if(entropy >= 0 & W < 0) return(.Machine$double.xmax)
     else if(entropy < 0 & W > 0) return(.Machine$double.xmax)
@@ -13,7 +13,7 @@ targetftn = function(W, d, Xs, init, const, entropy, del, intercept, K_alpha,
                         const = const, entropy = entropy, del = del,
                         weight.scale = weight.scale, G.scale = G.scale,
                         intercept = intercept, 
-                        method = "Newton", control = list(maxit = 1e5, allowSingular = T))
+                        method = "Newton", control = list(maxit = 1e5, allowSingular = TRUE))
   # if(nleqslv_res$termcd != 1 & nleqslv_res$termcd != 2){
   if(nleqslv_res$termcd != 1){
     if(max(abs(f(nleqslv_res$x, d = d, Xs = Xs, 
@@ -25,10 +25,10 @@ targetftn = function(W, d, Xs, init, const, entropy, del, intercept, K_alpha,
   w_S = f(nleqslv_res$x, d = d, Xs = Xs, 
           const = const, entropy = entropy, del = del,
           weight.scale = weight.scale, G.scale = G.scale,
-          intercept = intercept, returnw = T)
+          intercept = intercept, returnw = TRUE)
   # if(any(is.infinite(w_S))) return(.Machine$double.xmax)
   
-  if(returnw == F){
+  if(returnw == FALSE){
     # return(sum(G(w_S, type = type, del = del)) - n * W)
     return(sum(G.scale * G(weight.scale * w_S, entropy = entropy, del = del)) - K_alpha(W))
   }else{
