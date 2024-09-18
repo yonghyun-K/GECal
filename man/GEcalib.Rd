@@ -85,13 +85,13 @@ and \eqn{\phi_i} be the scaling factor for the calibration weights \eqn{\omega_i
 If \code{method == "GEC"}, \code{GEcalib} minimizes the negative entropy:
 \deqn{\sum_{i \in A} q_iG(\phi_i\omega_i),}
 with respect to \eqn{\bm \omega} subject to the calibration constraints \eqn{\sum_{i \in A} \omega_i \bm{z}_i = \sum_{i \in U} \bm{z}_i},
-where \eqn{\bm{z}_i^T = (\bm{x}_i^T, q_i \phi_i g(q_i \phi_i d_i))}, \eqn{A} denotes the sample index, and \eqn{U} represents the population index. 
+where \eqn{\bm{z}_i^T = (\bm{x}_i^T, q_i \phi_i g(\phi_i d_i))}, \eqn{A} denotes the sample index, and \eqn{U} represents the population index. 
 
 If \code{method == "GEC"}, but an element of \code{const} corresponding to the debiasing covariate 
 \eqn{g(d_i)} is \code{NA}, \code{GEcalib} minimizes the negative adjusted entropy:
 \deqn{\sum_{i \in A} q_iG(\phi_i\omega_i) - K(\alpha),}
 with respect to \eqn{\bm \omega} and \eqn{\alpha} subject to the calibration constraints 
-\eqn{\sum_{i \in A} \omega_i (\bm{x}_i^T, q_i \phi_i g(q_i \phi_i d_i)) = \left(\sum_{i \in U} \bm x_i, \alpha \right)},
+\eqn{\sum_{i \in A} \omega_i (\bm{x}_i^T, q_i \phi_i g(\phi_i d_i)) = \left(\sum_{i \in U} \bm x_i, \alpha \right)},
 where the solution \eqn{\hat \alpha} is an estimate of population total for \eqn{g(d_i)}.
 Examples of \eqn{K(\alpha)} includes \eqn{K(\alpha) = \alpha} when \code{K_alpha == NULL}, and 
 \deqn{K(\alpha) = \left(\sum_{i \in A} d_i g(d_i) + N \right) 
