@@ -1,7 +1,7 @@
 Package: GECal
 Type: Package
 Title: Generalized Entropy Calibration
-Version: 0.1.3
+Version: 0.1.4
 Authors@R: c(person("Yonghyun","Kwon", role=c("aut","cre"), email="yhkwon@kma.ac.kr", comment = c(ORCID = "0000-0001-9923-6790")), 
 			person("Jaekwang","Kim", role="aut", email="jkim@iastate.edu", comment = c(ORCID = "0000-0002-0246-6029")),
       person("Yumou","Qiu", role="aut",email="qiuyumou@math.pku.edu.cn", comment = c(ORCID = "0000-0003-4846-1263"))
