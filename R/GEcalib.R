@@ -139,12 +139,11 @@
 #'                     entropy = "ET", method = "GEC0")$w
 #' all.equal(w1, w2)
 #' 
-#' \donttest{
 #' # Generalized entropy calibration with debiasing covariate
 #' w3 <- GECal::GEcalib(~ . + g(d_S), dweight = d_S, data = x_S,
 #'                     const = colSums(cbind(1, x, log(1 / pi))),
 #'                     entropy = "ET", method = "GEC")$w
-#' 
+#'                     
 #' # Generalized entropy calibration with debiasing covariate
 #' # when its population total is unknown
 #' w4 <- GECal::GEcalib(~ . + g(d_S), dweight = d_S, data = x_S,
@@ -154,8 +153,7 @@
 #' 
 #' w5 <- GECal::GEcalib(~ . + g(d_S), dweight = d_S, data = x_S,
 #' const = colSums(cbind(1, x, NA)),
-#' entropy = "ET", method = "GEC", K_alpha = "log")$w                     
-#' }
+#' entropy = "ET", method = "GEC", K_alpha = "log")$w 
 
 
 #' @export
@@ -181,14 +179,15 @@ GEcalib = function(formula, dweight, data = NULL, const,
   assign("entropy", entropy, envir = environment())
   assign("del", del, envir = environment())
   
+  dweight_name <- deparse(substitute(dweight))
   if (is.null(data)) {
     mf <- model.frame(formula, environment())
     dweight0 = dweight
   } else {
-    dweight_name <- deparse(substitute(dweight))
     if(exists(dweight_name, where = data)){
       dweight0 = eval(substitute(dweight), envir = data)
     }else{
+      assign(dweight_name, dweight, envir = environment())
       dweight0 = dweight
     }
     mf <- model.frame(formula, data = data)  # Evaluate in the provided data
@@ -206,7 +205,7 @@ GEcalib = function(formula, dweight, data = NULL, const,
   }
   
   # Get the name of the transformed column g(dweight)
-  transformed_name <- paste0("g(", deparse(substitute(dweight)), ")")
+  transformed_name <- paste0("g(", dweight_name, ")")
   
   # Find the location of the column in the model matrix
   col_position <- which(colnames(Xs) == transformed_name)

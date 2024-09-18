@@ -59,7 +59,6 @@ calibration2 <- GECal::GEcalib(~ ., dweight = d_S, data = x_S,
                                entropy = "ET", method = "GEC0")
 GECal::estimate(y_S ~ 1, calibration = calibration2)$estimate
 
-\donttest{
 calibration3 <- GECal::GEcalib(~ . + g(d_S), dweight = d_S, data = x_S,
                                const = colSums(cbind(1, x, log(1 / pi))),
                                entropy = "ET", method = "GEC")
@@ -74,7 +73,6 @@ calibration5 <- GECal::GEcalib(~ . + g(d_S), dweight = d_S, data = x_S,
                                const = colSums(cbind(1, x, NA)),
                                entropy = "ET", method = "GEC", K_alpha = "log")
 GECal::estimate(y_S ~ 1, calibration = calibration5)$estimate
-}
 
 }
 \references{

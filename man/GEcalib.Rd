@@ -159,12 +159,11 @@ w2 <- GECal::GEcalib(~ ., dweight = d_S, data = x_S,
                     entropy = "ET", method = "GEC0")$w
 all.equal(w1, w2)
 
-\donttest{
 # Generalized entropy calibration with debiasing covariate
 w3 <- GECal::GEcalib(~ . + g(d_S), dweight = d_S, data = x_S,
                     const = colSums(cbind(1, x, log(1 / pi))),
                     entropy = "ET", method = "GEC")$w
-
+                    
 # Generalized entropy calibration with debiasing covariate
 # when its population total is unknown
 w4 <- GECal::GEcalib(~ . + g(d_S), dweight = d_S, data = x_S,
@@ -174,8 +173,7 @@ all.equal(w1, w4)
 
 w5 <- GECal::GEcalib(~ . + g(d_S), dweight = d_S, data = x_S,
 const = colSums(cbind(1, x, NA)),
-entropy = "ET", method = "GEC", K_alpha = "log")$w                     
-}
+entropy = "ET", method = "GEC", K_alpha = "log")$w 
 }
 \references{
 Kwon, Y., Kim, J., & Qiu, Y. (2024). Debiased calibration estimation using generalized entropy in survey sampling.
