@@ -118,6 +118,7 @@
 #' Journal of the American statistical Association, 87(418), 376-382.
 #' 
 #' @examples
+#' set.seed(11)
 #' N = 10000
 #' x = data.frame(x1 = rnorm(N, 2, 1), x2= runif(N, 0, 4))
 #' pi = pt((-x[,1] / 2 - x[,2] / 2), 3);

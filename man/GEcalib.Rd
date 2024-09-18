@@ -138,6 +138,7 @@ for a threshold \eqn{\delta} when \code{entropy == "PH"}.
 }
 
 \examples{
+set.seed(11)
 N = 10000
 x = data.frame(x1 = rnorm(N, 2, 1), x2= runif(N, 0, 4))
 pi = pt((-x[,1] / 2 - x[,2] / 2), 3);
