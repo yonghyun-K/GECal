@@ -10,7 +10,7 @@ GECal is now available in CRAN. Use install.packages for installation.
 install.packages("GECal")
 ```
 
-GECal can instead be installed using the package *devtools*. Please install *devtools* if it is unavailable.
+The latest version of GECal can instead be installed using the package *devtools*.
 ``` r
 install.packages("devtools") # Install "devtools" if it is unavailable.
 devtools::install_github("yonghyun-K/GECal", dependencies = T)
@@ -38,63 +38,57 @@ y_S = y[Index_S] # plot(x_S, y_S)
 
 # Hajek estimator for population mean
 calibration0 <- GECal::GEcalib(~ 1, dweight = d_S, data = x_S,
-                               const = 1, 
-                               entropy = "SL", method = "DS")
+  const = 1, entropy = "SL", method = "DS")
 GECal::estimate(y_S ~ 1, calibration = calibration0)$estimate 
 # sum(y_S * d_S) / sum(d_S)
 
 # Hajek estimator for population total
 calibration0 <- GECal::GEcalib(~ 1, dweight = d_S, data = x_S,
-                               const = N,
-                               entropy = "SL", method = "DS")
+  const = N, entropy = "SL", method = "DS")
 GECal::estimate(y_S ~ 1, calibration = calibration0)$estimate 
 # sum(y_S * d_S) * N / sum(d_S)
 
 # HT estimator for population total
 calibration <- GECal::GEcalib(~ 0, dweight = d_S, data = x_S,
-                              const = numeric(0),
-                              entropy = "SL", method = "DS")
+  const = numeric(0), entropy = "SL", method = "DS")
 GECal::estimate(y_S ~ 1, calibration = calibration)$estimate
 
 # DS estimator using ET(exponential tilting) divergence
 calibration1 <- GECal::GEcalib(~ ., dweight = d_S, data = x_S,
-                               const = colSums(cbind(1, x)),
-                               entropy = "ET", method = "DS")
+  const = colSums(cbind(1, x)), entropy = "ET", method = "DS")
 GECal::estimate(y_S ~ 1, calibration = calibration1)$estimate
 
 # GEC0 estimator using ET entropy
 calibration2 <- GECal::GEcalib(~ ., dweight = d_S, data = x_S,
-                               const = colSums(cbind(1, x)),
-                               entropy = "ET", method = "GEC0")
+  const = colSums(cbind(1, x)),entropy = "ET", method = "GEC0")
 GECal::estimate(y_S ~ 1, calibration = calibration2)$estimate
 
 # GEC estimator using ET entropy 
 # when the population total for log(d_S) is known.
 calibration3 <- GECal::GEcalib(~ . + g(d_S), dweight = d_S, data = x_S,
-                               const = colSums(cbind(1, x, log(1 / pi))),
-                               entropy = "ET", method = "GEC")
+  const = colSums(cbind(1, x, log(1 / pi))),
+  entropy = "ET", method = "GEC")
 GECal::estimate(y_S ~ 1, calibration = calibration3)$estimate
 
 # GEC estimator using ET entropy 
 # when the population total for log(d_S) is unknown.
 calibration4 <- GECal::GEcalib(~ . + g(d_S), dweight = d_S, data = x_S,
-                               const = colSums(cbind(1, x, NA)),
-                               entropy = "ET", method = "GEC")
+  const = colSums(cbind(1, x, NA)),
+  entropy = "ET", method = "GEC")
 GECal::estimate(y_S ~ 1, calibration = calibration4)$estimate
 
 # GEC estimator using ET entropy using different K_alpha
 # when the population total for log(d_S) is unknown.
 calibration5 <- GECal::GEcalib(~ . + g(d_S), dweight = d_S, data = x_S,
-                               const = colSums(cbind(1, x, NA)),
-                               entropy = "ET", method = "GEC", K_alpha = "log")
+  const = colSums(cbind(1, x, NA)),
+  entropy = "ET", method = "GEC", K_alpha = "log")
 GECal::estimate(y_S ~ 1, calibration = calibration5)$estimate
-
 ```
 
 ## Externel Links
 <!--
 -->
-- [CRAN Task View: Official Statistics & Survey Statistics](https://CRAN.R-project.org/view=OfficialStatistics)
+-- [CRAN Task View: Official Statistics & Survey Statistics: 4.1 Weighting and Calibration](https://CRAN.R-project.org/view=OfficialStatistics/#4.1_Weighting_and_Calibration:~:text=4.1%20Weighting%20and,totals%20and%20quantiles.)
 
 - [survey](https://CRAN.R-project.org/package=survey)
 
