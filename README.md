@@ -7,7 +7,7 @@ Generalized Entropy Calibration produces calibration weights based on generalize
 ## Installation
 GECal is now available in CRAN. Use install.packages for installation.
 ``` r
-# install.packages("GECal")
+install.packages("GECal")
 
 library(GECal)
 ```
