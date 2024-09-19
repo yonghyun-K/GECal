@@ -111,7 +111,13 @@ estimate <- function(formula, data = NULL, calibration, pimat = NULL){
   K_alpha <- calibration$K_alpha
   col_position <- calibration$col_position
   
-  if(is.null(pimat)) pimat = diag(w * (w - 1)) # dweight * (dweight - 1)
+  if(is.null(pimat)){
+    if(length(const) != 0 && const[1] == 1){
+      pimat = diag(w * (w - 1 / sum(dweight))) # dweight * (dweight - 1)
+    }else{
+      pimat = diag(w * (w - 1)) # dweight * (dweight - 1)
+    }
+  } 
   
   if(length(const) == 0){
     yhat = rep(0, length(ys))
