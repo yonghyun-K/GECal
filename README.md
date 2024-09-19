@@ -36,21 +36,21 @@ e = rnorm(N, 0, 1)
 y = x[,1] + x[,2] + e;
 y_S = y[Index_S] # plot(x_S, y_S)
 
-# Hajek estimator of population mean
+# Hajek estimator for population mean
 calibration0 <- GECal::GEcalib(~ 1, dweight = d_S, data = x_S,
                                const = 1, 
                                entropy = "SL", method = "DS")
 GECal::estimate(y_S ~ 1, calibration = calibration0)$estimate 
 # sum(y_S * d_S) / sum(d_S)
 
-# Hajek estimator of population total
+# Hajek estimator for population total
 calibration0 <- GECal::GEcalib(~ 1, dweight = d_S, data = x_S,
                                const = N,
                                entropy = "SL", method = "DS")
 GECal::estimate(y_S ~ 1, calibration = calibration0)$estimate 
 # sum(y_S * d_S) * N / sum(d_S)
 
-# HT estimator of population total
+# HT estimator for population total
 calibration <- GECal::GEcalib(~ 0, dweight = d_S, data = x_S,
                               const = numeric(0),
                               entropy = "SL", method = "DS")
