@@ -37,7 +37,7 @@
 #' Pasture80 = 570647, Pasture90 = 232630
 #' )
 #'
-#' calibration <- GECal::GEcalib(~ 0 -y -d, dweight = d, data = IAdata,
+#' calibration <- GECal::GEcalib(~ 0, dweight = d, data = IAdata,
 #'                               const = numeric(0),
 #'                               entropy = "EL", method = "DS")
 #' GECal::estimate(y ~ 1, data = IAdata, calibration = calibration, pimat = IApimat)$estimate
