@@ -197,7 +197,7 @@ GEcalib = function(formula, dweight, data = NULL, const,
   if(is.null(del)) del = quantile(dweight0, 0.75)
   
   Xs <- model.matrix(attr(mf, "terms"), mf)
-  if(rcond(Xs) < .Machine$double.eps){
+  if(length(Xs) > 0 && rcond(Xs) < .Machine$double.eps){
     stop("Error: rcond(model.matrix(formula, data)) < .Machine$double.eps")
   }
   
