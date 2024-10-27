@@ -270,7 +270,7 @@ GEcalib = function(formula, dweight, data = NULL, const,
           message(paste("Messeage from nlm: nlmres$code =", nlmres$code,
                         ", nlmres$minimum =", nlmres$minimum))
           warning("Convergence failed")
-          w = NA
+          w = rep(NA, length(d))
         }else{
           w = targetftn(W, d = d, Xs = Xs, init = init,
                         const = const, entropy = entropy, del = del,
@@ -298,7 +298,7 @@ GEcalib = function(formula, dweight, data = NULL, const,
           message(paste("Messeage from nleqslv: nleqslv_res$message =", nleqslv_res$message,
                         ", nleqslv_res$termcd =", nleqslv_res$termcd))
           warning("Convergence failed")
-          w = NA      
+          w = rep(NA, length(d))   
         }else{
           w = NULL
         }
