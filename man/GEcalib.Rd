@@ -33,8 +33,8 @@ GEcalib(
 If numeric, \code{entropy} represents the order of Renyi's entropy, where 
 \eqn{G(\omega) = r^{-1}(r+1)^{-1}\omega^{r+1}} if \eqn{r \neq 0, -1}.
 If a string, valid options include: 
-"SL" (Squared-loss), "EL" (Empirical Likelihood), "ET" (Exponential Tilting), 
-"CE" (Cross-Entropy), "HD" (Hellinger Distance), and "PH" (Pseudo-Huber). See "Summary" for details.}
+"SL" (Squared-loss, \eqn{r = 1}), "EL" (Empirical Likelihood, \eqn{r = -1}), "ET" (Exponential Tilting, \eqn{r = 0}), 
+"HD" (Hellinger Distance, \eqn{r = -1/2}), "CE" (Cross-Entropy), and "PH" (Pseudo-Huber). See "Summary" for details.}
 
 \item{weight.scale}{Positive scaling factor for the calibration weights \eqn{\omega_i}. Asymptotics justify setting \code{weight.scale} 
 to the finite population correction (\eqn{fpc = n / N}).}

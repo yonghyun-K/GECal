@@ -22,8 +22,8 @@
 #' If numeric, \code{entropy} represents the order of Renyi's entropy, where 
 #' \eqn{G(\omega) = r^{-1}(r+1)^{-1}\omega^{r+1}} if \eqn{r \neq 0, -1}.
 #' If a string, valid options include: 
-#' "SL" (Squared-loss), "EL" (Empirical Likelihood), "ET" (Exponential Tilting), 
-#' "CE" (Cross-Entropy), "HD" (Hellinger Distance), and "PH" (Pseudo-Huber). See "Summary" for details.
+#' "SL" (Squared-loss, \eqn{r = 1}), "EL" (Empirical Likelihood, \eqn{r = -1}), "ET" (Exponential Tilting, \eqn{r = 0}), 
+#' "HD" (Hellinger Distance, \eqn{r = -1/2}), "CE" (Cross-Entropy), and "PH" (Pseudo-Huber). See "Summary" for details.
 #' @param weight.scale Positive scaling factor for the calibration weights \eqn{\omega_i}. Asymptotics justify setting \code{weight.scale} 
 #' to the finite population correction (\eqn{fpc = n / N}).
 #' @param G.scale Positive scaling factor for the generalized entropy function \eqn{G}. Asymptotics justify setting 
@@ -294,8 +294,9 @@ GEcalib = function(formula, dweight, data = NULL, const,
                     weight.scale = weight.scale, G.scale = G.scale,
                     intercept = intercept)
         
-        if(any(is.nan(tmpval)) | (max(abs(tmpval)) > 1e-5)){
+        if(any(is.nan(tmpval)) | (norm(tmpval, type = "2") > 1e-3)){
           message(paste("Messeage from nleqslv: nleqslv_res$message =", nleqslv_res$message,
+                        ", norm(tmpval, type = \"2\") =", norm(tmpval, type = "2"),
                         ", nleqslv_res$termcd =", nleqslv_res$termcd))
           warning("Convergence failed")
           w = rep(NA, length(d))   
