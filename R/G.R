@@ -87,7 +87,7 @@ G_DS = function(x, entropy, del = NULL){
 ginv = function(x, entropy = NULL, del = NULL, intercept = rep(0, length(x))){
   if(is.null(entropy))  entropy <- get("entropy", envir = environment())
   if (is.numeric(entropy)) {
-    if(!(entropy %% 2 == 1) & any((intercept + x) *  entropy < 0)) return(rep(Inf, length(x)))
+    if(!(entropy > 0 & entropy %% 2 == 1) & any((intercept + x) *  entropy < 0)) return(rep(Inf, length(x)))
     if(entropy == 0){
       w = exp(intercept + x)
     }else{
