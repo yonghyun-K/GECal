@@ -24,7 +24,7 @@ library(tidyverse)
 library(xtable)
 # library(kableExtra)
 
-set.seed(11)
+set.seed(12)
 SIMNUM = args[1]
 
 if(!interactive()){
@@ -85,17 +85,24 @@ vx = exp(-x[,1] + x[,3])
 e = rnorm(n, 0, sqrt(vx))
 
 # y = 2 + 1 * x[,1] + 2 * x[,2] + 3 * x[,3] + e; print("OR Model 1") # Model 1
-y = 2 + x[,1]^2 + + exp(x[,2]) + e; print("OR Model 2") # Model 2
+y = 2.5 + x[,1]^2 + exp(x[,2]) / 2 + e; print("OR Model 2") # Model 2
 
 # sd(e); sd(y - e)
 
-# pi = 1 / (1 + exp(-(0.1 * x[,1] - 0.1 * x[,2] - 0.2 * x[,3]))); print("RM Model 1") # Model 1
-pi = 1 / (1 + exp(-(-0.1 * x[,1] + 0.1 * e))); print("RM Model 2") # Model 2
+# pi = 1 / (1 + exp(-(-1.8 + 0.1 * x[,1] - 0.1 * x[,2] - 0.2 * x[,3]))); print("RM Model 1") # Model 1
+# pi = 1 / (1 + exp(-(-2 -0.1 * x[,1] + 0.1 * e))); print("RM Model 2") # Model 2
 # pi = runif(n, 0, 1) # To be removed
 # pi = rep(0.3, n) # To be removed
 
+# pi = 1 / (1 + exp(-(-1 + 0.1 * x[,1] - 0.1 * x[,2] - 0.2 * x[,3]))); print("RM Model 1") # Model 1
+pi = 1 / (1 + exp(-(-1.25 -0.1 * x[,1] + 0.1 * e + 0.1 * x[,1] * e))); print("RM Model 2") # Model 2
+
+# sort(pi)[1:20]
+pi = ifelse(pi > 0.07, pi, 0.07)
+
 theta = sum(y)
-mean(pi)
+# theta
+mean(pi)*n
 
 
 final_res <- foreach(
@@ -298,7 +305,8 @@ final_res <- foreach(
       vhat = predict.glm(Vmodel_d, data, type = "response")
       
       for(type in c("EL", "ET", "SL")){
-        for(DScnt in 1:2){
+        # for(DScnt in 1:2){
+        for(DScnt in 1){
           if(DScnt == 1){
             v_S = rep(1, sum(delta)) # DS1; v_i = 1
           }else if(DScnt == 2){
@@ -352,7 +360,8 @@ final_res <- foreach(
           var_res2 = c(var_res2, setNames(var2, paste(type, "DS", DScnt, sep = "")))
         }
         
-        for(GECcnt in 1:2){
+        # for(GECcnt in 1:2){
+        for(GECcnt in 1){
           if(type == "EL"){
             u_vec = -pi
           }else if(type == "ET"){
@@ -480,7 +489,8 @@ colSums(is.na(tmpres))
 
 # xtable::xtable(res, digits = 4)
 
-res
+res <- cbind(t = BIAS / SE * sqrt(SIMNUM), SE)
+rownames(res) = row.names(final_res1[[1]])
 
 final_res2 = lapply(final_res, function(x) x[[2]])
 final_res2 = final_res2[sapply(final_res2, function(x) is.numeric(unlist(x)))]
@@ -489,7 +499,6 @@ tmpres2 = do.call(rbind, lapply(final_res2, c))
 final_res4 = lapply(final_res, function(x) x[[4]])
 final_res4 = final_res4[sapply(final_res4, function(x) is.numeric(unlist(x)))]
 tmpres4 = do.call(rbind, lapply(final_res4, c))
-cbind()
 
 final_res3 = lapply(final_res, function(x) x[[3]])
 final_res3 = final_res3[sapply(final_res3, function(x) is.numeric(unlist(x)))]
@@ -502,5 +511,7 @@ res2 = cbind(RB1 = (colMeans(tmpres2, na.rm = TRUE) - SE^2) / SE^2, CR1 = colMea
       RB2 = (colMeans(tmpres3, na.rm = TRUE) - SE^2) / SE^2, CR2 = colMeans(tmpres5, na.rm = TRUE))
 rownames(res2) = row.names(final_res1[[1]])
 
-xtable::xtable(cbind(res, res2), digits = 3)
+xtable::xtable(cbind(res, res2), digits = c(0,2,0,3,2,3,2))
 # res2
+
+boxplot(tmpres)
