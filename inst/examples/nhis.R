@@ -6,7 +6,7 @@
 if (!interactive()) {
   args <- as.numeric(commandArgs(trailingOnly = TRUE))
 } else{
-  args <- c(30)
+  args <- c(5)
 }
 
 timenow1 = Sys.time()
@@ -147,7 +147,7 @@ final_res <- foreach(
   se_res = c(se_res, setNames(res_est[2] / N, "Hajek"))
   
   #AIPW estimator
-  theta_res = c(theta_res, AIPW = (sum(yhat) + sum((y_S - yhat[Index]) / pihat)) / N) # AIPW
+  theta_res = c(theta_res, AIPW = (sum(yhat) + sum((y_S - yhat[index]) / pihat)) / N) # AIPW
   se_res = c(se_res, AIPW = NA)
 
   vectmp <- c("AgeGroup","REGION1", "SEX", "HT", "WT")
