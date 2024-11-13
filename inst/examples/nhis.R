@@ -147,8 +147,15 @@ final_res <- foreach(
   se_res = c(se_res, setNames(res_est[2] / N, "Hajek"))
   
   #AIPW estimator
-  theta_res = c(theta_res, AIPW = (sum(yhat) + sum((y_S - yhat[index]) / pihat)) / N) # AIPW
-  se_res = c(se_res, AIPW = NA)
+  theta_res = c(theta_res, AIPW = (sum(yhat) + sum((y_S - yhat[index]) / pihat[index])) / N) # AIPW
+  
+  hhat = pihat * model.frame(Omodel)[, -1]
+  kappa = solve(t(hhat[index,]) %*% (hhat[index,] * (1 / pihat[index] - 1) / pihat[index]),
+                t(hhat[index,]) %*% ((y_S - yhat[index]) * (1 / pihat[index] - 1) / pihat[index]))
+  eta = yhat + drop(hhat %*% kappa)
+  eta[index] = eta[index] + (y_S - yhat[index] - drop(hhat %*% kappa)[index]) / pihat[index]
+  
+  se_res = c(se_res, AIPW = sqrt(var(eta) / n))
 
   vectmp <- c("AgeGroup","REGION1", "SEX", "HT", "WT")
   # vectmp <- c("Y_IP")
@@ -233,7 +240,7 @@ res <- cbind(BIAS, SE, RMSE)
 rownames(res) = names(final_res1[[1]])
 res
 
-xtable(res)
+xtable(res * 1e2)
 
 colSums(is.na(tmpres))
 
