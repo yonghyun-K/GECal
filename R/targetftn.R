@@ -1,5 +1,6 @@
 targetftn = function(W, d, Xs, init, const, entropy, del, intercept, K_alpha, 
-                     weight.scale, G.scale,..., returnw = FALSE){
+                     weight.scale, G.scale,..., returnw = FALSE,
+                     maxit = 1e5, allowSingular = T, xtol = 1e-16){
   if (is.numeric(entropy)) {
     if(entropy >= 0 & W < 0) return(.Machine$double.xmax)
     else if(entropy < 0 & W > 0) return(.Machine$double.xmax)
@@ -13,7 +14,9 @@ targetftn = function(W, d, Xs, init, const, entropy, del, intercept, K_alpha,
                         const = const, entropy = entropy, del = del,
                         weight.scale = weight.scale, G.scale = G.scale,
                         intercept = intercept, 
-                        method = "Newton", control = list(maxit = 1e5, allowSingular = TRUE))
+                        method = "Newton", 
+                        control = list(maxit = maxit, allowSingular = allowSingular, xtol = xtol),
+                        xscalm = "auto")
   # if(nleqslv_res$termcd != 1 & nleqslv_res$termcd != 2){
   if(nleqslv_res$termcd != 1){
     if(max(abs(f(nleqslv_res$x, d = d, Xs = Xs, 

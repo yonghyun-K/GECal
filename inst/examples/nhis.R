@@ -6,7 +6,7 @@
 if (!interactive()) {
   args <- as.numeric(commandArgs(trailingOnly = TRUE))
 } else{
-  args <- c(5)
+  args <- c(50)
 }
 
 timenow1 = Sys.time()
@@ -23,7 +23,7 @@ suppressMessages(library(doParallel))
 library(tidyverse)
 library(xtable)
 library(GECal)
-library(mice)
+# library(mice)
 # library(kableExtra)
 
 set.seed(11)
@@ -44,7 +44,9 @@ registerDoParallel(cl)
 # summary(smho98)
 # summary(smho.N874)
 
-nhis = read.csv("C:/Users/ghkfk/Box/Data/NHIS2021/NHIS_2021.CSV")
+# nhis = read.csv("C:/Users/ghkfk/Box/Data/NHIS2021/NHIS_2021.CSV")
+nhis = read.csv("C:/Users/User/Box/Data/NHIS2021/NHIS_2021.CSV")
+
 
 names(nhis)[names(nhis) == "Height"] <- "HT"
 names(nhis)[names(nhis) == "Weight"] <- "WT"
@@ -55,13 +57,25 @@ nhis$SEX <- as.factor(nhis$SEX)
 nhis$AgeGroup <- as.factor(nhis$AgeGroup)
 N <- nrow(nhis)
 
-
-
 nhis[c("LDL", "HDL", "CholTotal", "Triglyc", 
        "DentalCaries", "Calculus", "UrineProt")] <- NULL
-apply(nhis, 2, function(x) sum(is.na(x)))
-imp <- mice(nhis, 1, method = "sample", maxit = 1)
-nhis <- complete(imp)
+# apply(nhis, 2, function(x) sum(is.na(x)))
+# imp <- mice(nhis, 1, method = "sample", maxit = 1)
+# nhis <- complete(imp)
+
+# Custom function to impute missing values by sampling observed values
+impute_by_sampling <- function(data) {
+  data[] <- lapply(data, function(x) {
+    if (any(is.na(x))) {
+      x[is.na(x)] <- sample(x[!is.na(x)], sum(is.na(x)), replace = TRUE)
+    }
+    x
+  })
+  return(data)
+}
+
+# Apply the function to your dataset
+nhis <- impute_by_sampling(nhis)
 
 smp.size <- 1000
 
@@ -128,34 +142,44 @@ final_res <- foreach(
   )
   res_est = estimate(y_S ~ 1, calibration = calibration)$estimate
 
-  theta_res = c(theta_res, setNames(res_est[1] / N, "HT"))
-  se_res = c(se_res, setNames(res_est[2] / N, "HT"))
+  theta_res = c(theta_res, setNames(res_est[1] / N, "IPW"))
+  se_res = c(se_res, setNames(res_est[2] / N, "IPW"))
   
-  #Hajek estimator
-  const = N
-  calibration <- GEcalib(
-    ~ 1,
-    dweight = d_S,
-    data = nhis.samp,
-    const = const,
-    entropy = 1,
-    method = "DS"
-  )
-  res_est = estimate(y_S ~ 1, calibration = calibration)$estimate
-  
-  theta_res = c(theta_res, setNames(res_est[1] / N, "Hajek"))
-  se_res = c(se_res, setNames(res_est[2] / N, "Hajek"))
-  
-  #AIPW estimator
-  theta_res = c(theta_res, AIPW = (sum(yhat) + sum((y_S - yhat[index]) / pihat[index])) / N) # AIPW
-  
-  hhat = pihat * model.frame(Omodel)[, -1]
+  # Hajek estimator
+  # const = N
+  # calibration <- GEcalib(
+  #   ~ 1,
+  #   dweight = d_S,
+  #   data = nhis.samp,
+  #   const = const,
+  #   entropy = 1,
+  #   method = "DS"
+  # )
+  # res_est = estimate(y_S ~ 1, calibration = calibration)$estimate
+  # 
+  # theta_res = c(theta_res, setNames(res_est[1] / N, "SIPW"))
+  # se_res = c(se_res, setNames(res_est[2] / N, "SIPW"))
+
+  # SIPW estimator
+  theta_res = c(theta_res, SIPW = sum((y_S) / pihat[index]) / sum(1 / pihat[index])) # AIPW  
+  hhat = pihat * model.matrix(~1, data = nhis)
   kappa = solve(t(hhat[index,]) %*% (hhat[index,] * (1 / pihat[index] - 1) / pihat[index]),
                 t(hhat[index,]) %*% ((y_S - yhat[index]) * (1 / pihat[index] - 1) / pihat[index]))
   eta = yhat + drop(hhat %*% kappa)
   eta[index] = eta[index] + (y_S - yhat[index] - drop(hhat %*% kappa)[index]) / pihat[index]
   
-  se_res = c(se_res, AIPW = sqrt(var(eta) / n))
+  se_res = c(se_res, SIPW = sqrt(var(eta) / N))
+
+  # AIPW estimator
+  theta_res = c(theta_res, AIPW = (sum(yhat) + sum((y_S - yhat[index]) / pihat[index])) / N) # AIPW
+  
+  hhat = pihat * model.matrix(Omodel)[, -1]
+  kappa = solve(t(hhat[index,]) %*% (hhat[index,] * (1 / pihat[index] - 1) / pihat[index]),
+                t(hhat[index,]) %*% ((y_S - yhat[index]) * (1 / pihat[index] - 1) / pihat[index]))
+  eta = yhat + drop(hhat %*% kappa)
+  eta[index] = eta[index] + (y_S - yhat[index] - drop(hhat %*% kappa)[index]) / pihat[index]
+  
+  se_res = c(se_res, AIPW = sqrt(var(eta) / N))
 
   vectmp <- c("AgeGroup","REGION1", "SEX", "HT", "WT")
   # vectmp <- c("Y_IP")
@@ -171,22 +195,22 @@ final_res <- foreach(
   #                weights = 1 / pi_S, data = smho98.samp)
   # vhat = predict.glm(Vmodel_d, smho98, type = "response")
   
-  for (entropy in c(-1, 0, 1)) {
-    const = colSums(model.matrix(fortmp, nhis))
-    
-    calibration <- GEcalib(
-      fortmp,
-      dweight = d_S,
-      data = nhis.samp,
-      const = const,
-      entropy = entropy,
-      method = "DS"
-    )
-    
-    res_est = estimate(y_S ~ 1, calibration = calibration)$estimate
-
-    theta_res = c(theta_res, setNames(res_est[1] / N, paste("DS", entropy, sep = "_"))) # DS
-    se_res = c(se_res, setNames(res_est[2] / N, paste("DS", entropy, sep = "_")))
+  for (entropy in list(-1, -1/2, 1, "CE")) {
+    # const = colSums(model.matrix(fortmp, nhis))
+    # 
+    # calibration <- GEcalib(
+    #   fortmp,
+    #   dweight = d_S,
+    #   data = nhis.samp,
+    #   const = const,
+    #   entropy = entropy,
+    #   method = "DS"
+    # )
+    # 
+    # res_est = estimate(y_S ~ 1, calibration = calibration)$estimate
+    # 
+    # theta_res = c(theta_res, setNames(res_est[1] / N, paste("DS", entropy, sep = "_"))) # DS
+    # se_res = c(se_res, setNames(res_est[2] / N, paste("DS", entropy, sep = "_")))
     
     const = colSums(cbind(model.matrix(fortmp, nhis), 
                           g(1 / pihat, entropy = entropy)))

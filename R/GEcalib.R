@@ -164,7 +164,8 @@ GEcalib = function(formula, dweight, data = NULL, const,
                     # weight.bound = NULL, 
                    weight.scale = 1, G.scale = 1,
                     # opt.method = c("nleqslv", "optim", "CVXR"),
-                    K_alpha = NULL, is.total = TRUE, del = NULL
+                    K_alpha = NULL, is.total = TRUE, del = NULL,
+                   xtol = 1e-16, maxit = 1e5, allowSingular = T
 ){
   entropy <- if (is.numeric(entropy)) {
     entropy  # Assign entropy directly if it's numeric
@@ -261,7 +262,8 @@ GEcalib = function(formula, dweight, data = NULL, const,
         nlmres= nlm(targetftn, p = What, d = d, Xs = Xs, init = init,
                     const = const, entropy = entropy, del = del, 
                     weight.scale = weight.scale, G.scale = G.scale,
-                    intercept = intercept, K_alpha = K_alpha)
+                    intercept = intercept, K_alpha = K_alpha,
+                    maxit = maxit, allowSingular = allowSingular, xtol = xtol)
         if(nlmres$code != 1 & nlmres$code != 2 & nlmres$code != 3){
           stop(message(paste("Messeage from nlm: nlmres$code =", nlmres$code)))
         }
@@ -275,7 +277,8 @@ GEcalib = function(formula, dweight, data = NULL, const,
           w = targetftn(W, d = d, Xs = Xs, init = init,
                         const = const, entropy = entropy, del = del,
                         weight.scale = weight.scale, G.scale = G.scale,
-                        intercept = intercept, K_alpha = K_alpha, returnw = TRUE)
+                        intercept = intercept, K_alpha = K_alpha, returnw = TRUE,
+                        maxit = maxit, allowSingular = allowSingular, xtol = xtol)
         }
       }else{
         stop("NA appears in const outside g(d)")
@@ -284,7 +287,8 @@ GEcalib = function(formula, dweight, data = NULL, const,
       nleqslv_res = nleqslv::nleqslv(init, f, jac = h, d = d, Xs = Xs, 
                                      const = const, entropy = entropy, del = del,
                                      weight.scale = weight.scale, G.scale = G.scale,
-                                     intercept = intercept, control = list(maxit = 1e5, allowSingular = TRUE),
+                                     intercept = intercept, 
+                                     control = list(maxit = maxit, allowSingular = allowSingular, xtol = xtol),
                                      xscalm = "auto")
       # control = control
       

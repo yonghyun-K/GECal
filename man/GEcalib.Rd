@@ -15,7 +15,10 @@ GEcalib(
   G.scale = 1,
   K_alpha = NULL,
   is.total = TRUE,
-  del = NULL
+  del = NULL,
+  xtol = 1e-16,
+  maxit = 1e+05,
+  allowSingular = T
 )
 }
 \arguments{
