@@ -6,7 +6,7 @@
 if (!interactive()) {
   args <- as.numeric(commandArgs(trailingOnly = TRUE))
 } else{
-  args <- c(50)
+  args <- c(500)
 }
 
 timenow1 = Sys.time()
@@ -44,8 +44,8 @@ registerDoParallel(cl)
 # summary(smho98)
 # summary(smho.N874)
 
-# nhis = read.csv("C:/Users/ghkfk/Box/Data/NHIS2021/NHIS_2021.CSV")
-nhis = read.csv("C:/Users/User/Box/Data/NHIS2021/NHIS_2021.CSV")
+nhis = read.csv("C:/Users/ghkfk/Box/Data/NHIS2021/NHIS_2021.CSV")
+# nhis = read.csv("C:/Users/User/Box/Data/NHIS2021/NHIS_2021.CSV")
 
 
 names(nhis)[names(nhis) == "Height"] <- "HT"
@@ -55,6 +55,8 @@ names(nhis)[names(nhis) == "Gender"] <- "SEX"
 nhis$REGION1 <- as.factor(nhis$REGION1)
 nhis$SEX <- as.factor(nhis$SEX)
 nhis$AgeGroup <- as.factor(nhis$AgeGroup)
+
+nhis = nhis[sample(1:nrow(nhis), 1e5), ]
 N <- nrow(nhis)
 
 nhis[c("LDL", "HDL", "CholTotal", "Triglyc", 
@@ -81,6 +83,8 @@ smp.size <- 1000
 
 tab1 = round(table(nhis$AgeGroup, nhis$REGION1, nhis$SEX) / N * smp.size)
 tab1 = ifelse(tab1 < 1, 1, tab1)
+# tab1 = ifelse(table(nhis$AgeGroup, nhis$REGION1, nhis$SEX) == 0, 0, tab1)
+
 n = sum(tab1)
 
 theta = mean(nhis$Hemo)
@@ -109,14 +113,47 @@ final_res <- foreach(
   delta = as.integer(1:N %in% index)
   Rmodel = glm(delta ~ AgeGroup + REGION1 + SEX, family = binomial,
                data = nhis)
-  pihat = predict.glm(Rmodel, nhis, type = "response")
+  # Rmodel = glm(delta ~ AgeGroup + SEX, family = binomial,
+  #              data = nhis)
+  pihat0 = predict.glm(Rmodel, nhis, type = "response")
   
-  Omodel = lm(Hemo ~ AgeGroup + REGION1 + SEX + HT + WT, data = nhis)
+  
+  findphi2 = function(phi, x0, Z, delta, ..., returnw = F){
+    pi_phi = drop(1 / (1 + exp(-x0 %*% phi)))
+    w_phi = ifelse(delta, (1 - pi_phi) / pi_phi, -1)
+    if(returnw){
+      return(drop(1 / pi_phi))
+    }else{
+      return(drop(w_phi %*% Z))
+    }
+  }
+  jacphi2 = function(phi, x0, Z, delta, ..., returnw = F){
+    pi_phi = drop(1 / (1 + exp(-x0 %*% phi)))
+    logit_phi = pi_phi / (1 - pi_phi)
+    return(-t(Z) %*% (x0 * ifelse(delta, 1 / logit_phi, 0) ))
+    # return(-t(x0) %*% (Z * ifelse(delta, 1 / logit_phi, logit_phi) ))
+  }
+  
+  xR = model.matrix(Rmodel)
+  nleqslv_res = nleqslv(Rmodel$coefficients, findphi2, jac = jacphi2, x0 = xR, Z = xR, delta = delta,
+                         control = list(maxit = 1e5, allowSingular = T), xscalm = "auto",
+                         method = "Newton")
+  
+  if(nleqslv_res$termcd != 1 & max(abs(findphi2(nleqslv_res$x, x0 = xR, Z = xR, delta = delta))) > 1e-5){
+    w_S = NA
+  }else{
+    w_S = findphi2(nleqslv_res$x, x0 = xR, Z = xR, delta = delta, returnw = T)
+  }
+  # drop(t(xR[Index_S,]) %*% w_S2[Index_S]); colSums(xR)
+  w_S2 = w_S
+  
+  # summary(lm(Smoking ~ ., data = nhis))
+  
+  Omodel = lm(Hemo ~ AgeGroup + SEX + HT + WT + Waist + Alcohol + SysBP + DiaBP + FBS + Creatinine, data = nhis)
   yhat = predict.lm(Omodel, nhis, type = "response")
   
   nhis.samp <- nhis[index, ]
   # d_S       <- 1 / pi_S
-  d_S       <- 1 / pihat[index]
   y_S <- nhis.samp$Hemo
   
   # omega2_S = matrix(0, nrow = length(index), ncol = length(index))
@@ -130,20 +167,31 @@ final_res <- foreach(
   theta_res = NULL
   se_res = NULL
   
-  #HT estimator
-  const = numeric(0)
-  calibration <- GEcalib(
-    ~ 0,
-    dweight = d_S,
-    data = nhis.samp,
-    const = const,
-    entropy = 1,
-    method = "DS"
-  )
-  res_est = estimate(y_S ~ 1, calibration = calibration)$estimate
-
-  theta_res = c(theta_res, setNames(res_est[1] / N, "IPW"))
-  se_res = c(se_res, setNames(res_est[2] / N, "IPW"))
+  for(pimethod in 1:3){
+    if(pimethod == 1){
+      pihat = rep(n / N, N)
+    }else if(pimethod == 2){
+      pihat = pihat0
+    }else if(pimethod == 3){
+      pihat = 1 / w_S2
+    }
+    
+    d_S <- 1 / pihat[index]
+  
+  # #HT estimator
+  # const = numeric(0)
+  # calibration <- GEcalib(
+  #   ~ 0,
+  #   dweight = d_S,
+  #   data = nhis.samp,
+  #   const = const,
+  #   entropy = 1,
+  #   method = "DS"
+  # )
+  # res_est = estimate(y_S ~ 1, calibration = calibration)$estimate
+  # 
+  # theta_res = c(theta_res, setNames(res_est[1] / N, "IPW"))
+  # se_res = c(se_res, setNames(res_est[2] / N, "IPW"))
   
   # Hajek estimator
   # const = N
@@ -161,28 +209,34 @@ final_res <- foreach(
   # se_res = c(se_res, setNames(res_est[2] / N, "SIPW"))
 
   # SIPW estimator
-  theta_res = c(theta_res, SIPW = sum((y_S) / pihat[index]) / sum(1 / pihat[index])) # AIPW  
+  theta_res = c(theta_res, IPW = sum((y_S) / pihat[index]) / sum(1 / pihat[index])) # AIPW  
   hhat = pihat * model.matrix(~1, data = nhis)
   kappa = solve(t(hhat[index,]) %*% (hhat[index,] * (1 / pihat[index] - 1) / pihat[index]),
                 t(hhat[index,]) %*% ((y_S - yhat[index]) * (1 / pihat[index] - 1) / pihat[index]))
   eta = yhat + drop(hhat %*% kappa)
   eta[index] = eta[index] + (y_S - yhat[index] - drop(hhat %*% kappa)[index]) / pihat[index]
   
-  se_res = c(se_res, SIPW = sqrt(var(eta) / N))
+  se_res = c(se_res, IPW = sqrt(var(eta) / N))
 
   # AIPW estimator
-  theta_res = c(theta_res, AIPW = (sum(yhat) + sum((y_S - yhat[index]) / pihat[index])) / N) # AIPW
-  
-  hhat = pihat * model.matrix(Omodel)[, -1]
-  kappa = solve(t(hhat[index,]) %*% (hhat[index,] * (1 / pihat[index] - 1) / pihat[index]),
-                t(hhat[index,]) %*% ((y_S - yhat[index]) * (1 / pihat[index] - 1) / pihat[index]))
-  eta = yhat + drop(hhat %*% kappa)
-  eta[index] = eta[index] + (y_S - yhat[index] - drop(hhat %*% kappa)[index]) / pihat[index]
-  
-  se_res = c(se_res, AIPW = sqrt(var(eta) / N))
+  # theta_res = c(theta_res, AIPW = (sum(yhat) + sum((y_S - yhat[index]) / pihat[index])) / N) # AIPW
+  # 
+  # if(pimethod == 1){
+  #   hhat = pihat * model.matrix(Rmodel)
+  # }else if(pimethod == 2){
+  #   hhat = pihat / (1 - pihat) * model.matrix(Rmodel)
+  # }
+  # # hhat = pihat * model.matrix(Rmodel)
+  # kappa = solve(t(hhat[index,]) %*% (hhat[index,] * (1 / pihat[index] - 1) / pihat[index]),
+  #               t(hhat[index,]) %*% ((y_S - yhat[index]) * (1 / pihat[index] - 1) / pihat[index]))
+  # eta = yhat + drop(hhat %*% kappa)
+  # eta[index] = eta[index] + (y_S - yhat[index] - drop(hhat %*% kappa)[index]) / pihat[index]
+  # 
+  # se_res = c(se_res, AIPW = sqrt(var(eta) / N))
 
-  vectmp <- c("AgeGroup","REGION1", "SEX", "HT", "WT")
+  vectmp <- as.character(formula(Omodel))[3]
   # vectmp <- c("Y_IP")
+  
   fortmp <- formula(paste("~", paste(vectmp, collapse = "+")))
   fortmp2 <- formula(paste("~", paste(c(vectmp, "g(d_S)"), collapse = "+")))
   
@@ -212,22 +266,34 @@ final_res <- foreach(
     # theta_res = c(theta_res, setNames(res_est[1] / N, paste("DS", entropy, sep = "_"))) # DS
     # se_res = c(se_res, setNames(res_est[2] / N, paste("DS", entropy, sep = "_")))
     
-    const = colSums(cbind(model.matrix(fortmp, nhis), 
-                          g(1 / pihat, entropy = entropy)))
-    
-    calibration <- GEcalib(
-      fortmp2,
-      dweight = d_S,
-      data = nhis.samp,
-      const = const,
-      entropy = entropy,
-      method = "GEC"
-    )
+    if(pimethod == 1){
+      const = colSums(model.matrix(fortmp, nhis))
+      calibration <- GEcalib(
+        fortmp,
+        dweight = d_S,
+        data = nhis.samp,
+        const = const,
+        entropy = entropy,
+        method = "GEC0"
+      )
+    }else{
+      const = colSums(cbind(model.matrix(fortmp, nhis), 
+                            g(1 / pihat, entropy = entropy)))
+      calibration <- GEcalib(
+        fortmp2,
+        dweight = d_S,
+        data = nhis.samp,
+        const = const,
+        entropy = entropy,
+        method = "GEC"
+      )
+    }
     
     res_est = estimate(y_S ~ 1, calibration = calibration)$estimate
     
     theta_res = c(theta_res, setNames(res_est[1] / N, paste("GEC", entropy, sep = "_"))) # DS
     se_res = c(se_res, setNames(res_est[2] / N, paste("GEC", entropy, sep = "_")))
+  }
   }
   
   CR_res = ifelse(abs(theta_res - theta) < qnorm(0.975) * se_res, 1, 0)
@@ -264,7 +330,7 @@ res <- cbind(BIAS, SE, RMSE)
 rownames(res) = names(final_res1[[1]])
 res
 
-xtable(res * 1e2)
+xtable(res * 1e2, digits = 3)
 
 colSums(is.na(tmpres))
 
@@ -279,6 +345,8 @@ tmpres3 = do.call(rbind, lapply(final_res3, c))
 
 res2 = cbind(RB = (colMeans(tmpres2^2, na.rm = TRUE) - SE^2) / SE^2, 
              CR = colMeans(tmpres3, na.rm = TRUE))
+
+# xtable(res2 * 1e2)
 
 # hist(g(1 / pi, entropy = -1))
 # hist(g(1 / pi, entropy = 0))
