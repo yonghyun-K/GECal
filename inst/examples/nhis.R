@@ -89,7 +89,9 @@ n = sum(tab1)
 
 nhis$Smoking <- ifelse(nhis$Smoking == 3, 1, 0)
 
-nhis$Hemo <- nhis$Smoking  # Variable of interest y is Smoking
+# summary(nhis)
+
+# nhis$Hemo <- nhis$OralExam  # Variable of interest y is Smoking
 
 theta = mean(nhis$Hemo)
 
@@ -101,6 +103,7 @@ final_res <- foreach(
   
   index = c()
   pi_S = c()
+  pi = rep(0, N)
   for(AgeGroup in unique(nhis$AgeGroup)){
     for(REGION1 in unique(nhis$REGION1)){
       for(SEX in unique(nhis$SEX)){
@@ -110,6 +113,7 @@ final_res <- foreach(
         n_h = tab1[AgeGroup,REGION1,SEX]
         index = c(index, sample(idx_tmp, n_h, replace = FALSE))
         pi_S = c(pi_S, rep(n_h / length(idx_tmp), n_h))
+        pi[idx_tmp] = n_h / length(idx_tmp)
       }
     }
   }
@@ -117,6 +121,13 @@ final_res <- foreach(
   delta = as.integer(1:N %in% index)
   Rmodel = glm(delta ~ AgeGroup + REGION1 + SEX, family = binomial,
                data = nhis)
+  
+  # Rmodel = glm(delta ~ AgeGroup * REGION1 * SEX, family = binomial,
+  #              data = nhis)
+  
+  # Rmodel = glm(delta ~ AgeGroup + REGION1 + SEX + HT + WT + Waist + Alcohol + SysBP + DiaBP+ FBS + Creatinine, family = binomial,
+  #              data = nhis)
+  
   # Rmodel = glm(delta ~ AgeGroup + SEX, family = binomial,
   #              data = nhis)
   pihat0 = predict.glm(Rmodel, nhis, type = "response")
@@ -152,7 +163,9 @@ final_res <- foreach(
   w_S2 = w_S
   
   # summary(lm(Smoking ~ ., data = nhis))
-  
+
+  # Omodel = lm(Hemo ~ AgeGroup + SEX + HT + WT, data = nhis)
+    
   Omodel = lm(Hemo ~ AgeGroup + SEX + HT + WT + Waist + Alcohol + SysBP + DiaBP + FBS + Creatinine, data = nhis)
   yhat = predict.lm(Omodel, nhis, type = "response")
   
@@ -171,8 +184,10 @@ final_res <- foreach(
   theta_res = NULL
   se_res = NULL
   
-  for(pimethod in 1:3){
-    if(pimethod == 1){
+  for(pimethod in 0:3){
+    if(pimethod == 0){
+      pihat = pi
+    }else if(pimethod == 1){
       pihat = rep(n / N, N)
     }else if(pimethod == 2){
       pihat = pihat0
