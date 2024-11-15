@@ -44,9 +44,9 @@ registerDoParallel(cl)
 # summary(smho98)
 # summary(smho.N874)
 
-nhis = read.csv("C:/Users/ghkfk/Box/Data/NHIS2021/NHIS_2021.CSV")
+# nhis = read.csv("C:/Users/ghkfk/Box/Data/NHIS2021/NHIS_2021.CSV")
 # nhis = read.csv("C:/Users/User/Box/Data/NHIS2021/NHIS_2021.CSV")
-
+nhis = read.csv("/Users/yhkwon/Library/CloudStorage/Box-Box/Data/NHIS2021/NHIS_2021.CSV")
 
 names(nhis)[names(nhis) == "Height"] <- "HT"
 names(nhis)[names(nhis) == "Weight"] <- "WT"
@@ -86,6 +86,10 @@ tab1 = ifelse(tab1 < 1, 1, tab1)
 # tab1 = ifelse(table(nhis$AgeGroup, nhis$REGION1, nhis$SEX) == 0, 0, tab1)
 
 n = sum(tab1)
+
+nhis$Smoking <- ifelse(nhis$Smoking == 3, 1, 0)
+
+nhis$Hemo <- nhis$Smoking  # Variable of interest y is Smoking
 
 theta = mean(nhis$Hemo)
 
