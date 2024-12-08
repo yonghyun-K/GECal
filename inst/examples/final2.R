@@ -73,18 +73,31 @@ c_ind_new$REGION_SEX <- factor(c_ind_new$REGION_SEX)
 c_ind_new$CD1_HTN <- factor(c_ind_new$CD1_HTN)
 c_ind_new$CD2_HTN <- factor(c_ind_new$CD2_HTN)
 
-calibration = GECal::GEcalib(~ 0 + REGION_SEX + WT + HT, method = "GEC0", entropy = "ET",
-                             const = c(region_sex_sum, HE_wt_sum, HE_ht_sum),
-                             dweight = rep(1), data = c_ind_new)
+# calibration = GECal::GEcalib(~ 0 + REGION_SEX + WT + HT, method = "GEC0", entropy = "ET",
+#                              const = c(region_sex_sum, HE_wt_sum, HE_ht_sum),
+#                              dweight = rep(1), data = c_ind_new)
+# 
+# calibration = GECal::GEcalib(~ 0 + REGION_SEX + AGE, method = "GEC0", entropy = "ET",
+#                              const = c(region_sex_sum, age_sum),
+#                              dweight = rep(1), data = c_ind_new)
 
-calibration = GECal::GEcalib(~ 0 + REGION_SEX + AGE, method = "GEC0", entropy = "ET",
-                             const = c(region_sex_sum, age_sum),
-                             dweight = rep(1), data = c_ind_new)
-
-calibration = GECal::GEcalib(~ 0 + REGION_SEX + AGE + WT, method = "GEC0", entropy = "ET",
+calibration_ET = GECal::GEcalib(~ 0 + REGION_SEX + AGE + WT, method = "GEC0", entropy = "ET",
                              const = c(region_sex_sum, age_sum, HE_wt_sum),
                              dweight = rep(1), data = c_ind_new)
-summary(calibration$w)
+
+calibration_HD = GECal::GEcalib(~ 0 + REGION_SEX + AGE + WT, method = "GEC0", entropy = "HD",
+                             const = c(region_sex_sum, age_sum, HE_wt_sum),
+                             dweight = rep(1), data = c_ind_new)
+
+calibration_CE = GECal::GEcalib(~ 0 + REGION_SEX + AGE + WT, method = "GEC0", entropy = "CE",
+                             const = c(region_sex_sum, age_sum, HE_wt_sum),
+                             dweight = rep(10), data = c_ind_new)
+
+calibration_SL = GECal::GEcalib(~ 0 + REGION_SEX + AGE + WT, method = "GEC0", entropy = "SL",
+                                const = c(region_sex_sum, age_sum, HE_wt_sum),
+                                dweight = rep(10), data = c_ind_new)
+
+# summary(calibration$w)
 # benchmark ############
 
 survey_design_c_ind <- svydesign(
@@ -96,12 +109,34 @@ survey_design_c_ind <- svydesign(
   # data = c_ind
 )
 
-survey_design0 <- svydesign(
-  id = ~1,  # Assuming no clustering
-  strata = ~REGION1 + REGION2,  # Strata variables
-  weights = ~calibration$w,  # Weight variable
-  data = c_ind_new
+calibrations <- list(
+  calibration_ET, 
+  calibration_HD, 
+  calibration_CE, 
+  calibration_SL
 )
+
+calibration_names <- c("survey_design_ET", "survey_design_HD", "survey_design_CE", "survey_design_SL")
+res_names <- c("res_ET", "res_HD", "res_CE", "res_SL")
+
+for (i in seq_along(calibrations)) {
+  survey_design0 = svydesign(
+    id = ~1,  # Assuming no clustering
+    strata = ~REGION1 + REGION2,  # Strata variables
+    weights = ~calibrations[[i]]$w,  # Weight variable
+    data = c_ind_new
+  )
+  
+  res_tmp = unclass(svytotal(~factor(CD2_HTN), design = survey_design0, na.rm=T))
+  res_tmp = data.frame(cbind(total = res_tmp, SE = sqrt(diag(attr(res_tmp, "var"))))[-1,])
+  
+  assign(
+    res_names[i],
+    res_tmp
+  )
+  
+}
+
 svytotal(~factor(CD1_HTN), design = survey_design_c_ind, na.rm=T)
 
 svytotal(~factor(CD1_HTN), design = survey_design0, na.rm=T)
@@ -122,38 +157,49 @@ res3 = data.frame(cbind(total = res3, SE = sqrt(diag(attr(res3, "var"))))[-1,])
 
 row.names(res1) <- row.names(res2) <- row.names(res3) <- NULL
 
-xtable::xtable(cbind(res1, res2, res3) / 1e3, digits = 0)
+# xtable::xtable(cbind(res1, res2, res3) / 1e3, digits = 0)
 
-# Plotting
-par(mfrow = c(5, 1), mar = c(4, 4, 2, 2)) # Set 5 rows, 1 column layout
-colors <- c("red", "blue", "green")
-labels <- c("Res1", "Res2", "Res3")
+xtable::xtable(cbind(res1, res2, res_ET, res_HD, res_SL, res_CE) / 1e3, digits = 0)
 
-for (i in 1:5) {
-  # Extract data for the row
-  x_vals <- c(res1$total[i], res2$total[i], res3$total[i])
-  y_vals <- c(1, 2, 3) # Position for each res
-  lower <- x_vals - c(res1$SE[i], res2$SE[i], res3$SE[i]) * 2
-  upper <- x_vals + c(res1$SE[i], res2$SE[i], res3$SE[i]) * 2
-  
-  # Plot
-  plot(NULL, xlim = range(c(lower, upper)), ylim = c(0.5, 3.5),
-       xlab = "Total", ylab = "", yaxt = "n", main = paste("Row", i, "CIs"))
-  axis(2, at = 1:3, labels = labels)
-  for (j in 1:3) {
-    points(x_vals[j], y_vals[j], pch = 16, col = colors[j])
-    lines(c(lower[j], upper[j]), c(y_vals[j], y_vals[j]), col = colors[j], lwd = 2)
-  }
-}
+# # Plotting
+# par(mfrow = c(5, 1), mar = c(4, 4, 2, 2)) # Set 5 rows, 1 column layout
+# colors <- c("red", "blue", "green")
+# labels <- c("Naive", "HT", "GEC")
+# 
+# for (i in 1:5) {
+#   # Extract data for the row
+#   x_vals <- c(res1$total[i], res2$total[i], res3$total[i])
+#   y_vals <- c(1, 2, 3) # Position for each res
+#   lower <- x_vals - c(res1$SE[i], res2$SE[i], res3$SE[i]) * 2
+#   upper <- x_vals + c(res1$SE[i], res2$SE[i], res3$SE[i]) * 2
+#   
+#   # Plot
+#   plot(NULL, xlim = range(c(lower, upper)), ylim = c(0.5, 3.5),
+#        xlab = "Total", ylab = "", yaxt = "n", main = paste("Row", i, "CIs"))
+#   axis(2, at = 1:3, labels = labels)
+#   for (j in 1:3) {
+#     points(x_vals[j], y_vals[j], pch = 16, col = colors[j])
+#     lines(c(lower[j], upper[j]), c(y_vals[j], y_vals[j]), col = colors[j], lwd = 2)
+#   }
+# }
 
 
 library(ggplot2)
 
+resnames<- c("Naive", "HT", "KL", "HD", "SL", "SKL")
+
+Rows <- c("19 years old and below", "20–29 years old", "30–49 years old",
+          "50–64 years old", "65 years old and above")
+
+
 # Create a combined data frame
 data <- bind_rows(
-  res1 %>% mutate(Label = "Res1", Row = 1:5),
-  res2 %>% mutate(Label = "Res2", Row = 1:5),
-  res3 %>% mutate(Label = "Res3", Row = 1:5)
+  res1 %>% mutate(Label = resnames[1], Row = Rows),
+  res2 %>% mutate(Label = resnames[2], Row = Rows),
+  res_ET %>% mutate(Label = resnames[3], Row = Rows),
+  res_HD %>% mutate(Label = resnames[4], Row = Rows),
+  res_SL %>% mutate(Label = resnames[5], Row = Rows),
+  res_CE %>% mutate(Label = resnames[6], Row = Rows)
 )
 
 # Calculate lower and upper bounds for CIs
@@ -162,14 +208,15 @@ data <- data %>%
          Upper = total + 2 * SE)
 # Reorder the factor levels for Label
 data <- data %>%
-  mutate(Label = factor(Label, levels = c("Res3", "Res2", "Res1")))  # Reverse order for y-axis
+  mutate(Label = factor(Label, levels = rev(resnames)))  # Reverse order for y-axis
 
 # Plot
 ggplot(data, aes(x = total, y = Label, color = Label)) +
   geom_point(size = 2.5) +  # Smaller points for a clean look
   geom_errorbarh(aes(xmin = Lower, xmax = Upper), height = 0.2, size = 0.7) + # Thinner error bars
   facet_wrap(~ Row, ncol = 1, scales = "free_x", strip.position = "top") + # Allow free x-scales
-  scale_color_manual(values = c("black", "darkgray", "lightgray")) + # Grayscale color scheme
+  # scale_color_manual(values = c("black", "darkgray", "lightgray")) + # Grayscale color scheme
+  scale_color_manual(values = c("black", "gray20", "gray40", "gray60", "gray70", "gray80")) + # Grayscale color scheme
   labs(x = "Estimated Total", y = "", title = "") + # Simplified axis titles
   theme_minimal(base_size = 12) + # Smaller base size for journal style
   theme(
