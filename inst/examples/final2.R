@@ -1,5 +1,5 @@
-setwd("C:/Users/User/Box/Data")
-
+# setwd("C:/Users/User/Box/Data")
+setwd("C:/Users/ghkfk/Box/Data")
 library(survey)
 library(dplyr)
 
@@ -10,6 +10,10 @@ c_ind <- left_join(c_ind, c_hh %>% select(HHID, REGION2, REGION1), by = join_by(
 c_ind$REGION1 <- as.factor(c_ind$REGION1)
 c_ind$REGION2 <- as.factor(c_ind$REGION2)
 c_ind$AGE = 2021 - c_ind$BIRTH_Y
+
+
+nrow(c_ind %>% subset(is.na(CD2_HTN)) %>% subset(is.na(CD1_HTN) | CD1_HTN == 1) %>% subset(AGE > 18) )
+
 
 c_ind_new <- c_ind %>% subset(!is.na(WT)) %>% subset(AGE > 18) 
 sort(sapply(c_ind_new, function(x) sum(is.na(x))))
