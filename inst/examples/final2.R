@@ -9,8 +9,21 @@ c_ind$REGION1 <- NULL
 c_ind <- left_join(c_ind, c_hh %>% select(HHID, REGION2, REGION1), by = join_by(HHID))
 c_ind$REGION1 <- as.factor(c_ind$REGION1)
 c_ind$REGION2 <- as.factor(c_ind$REGION2)
-c_ind$AGE = 2021 - c_ind$BIRTH_Y
+c_ind$AGE = 2021 - c_ind$BIRTH_Y # Age starts 0
+# c_ind$AGE = 2022 - c_ind$BIRTH_Y # Age starts 1
+# table(c_ind$AGE, useNA = "ifany")
+c_ind$AGE_group <- 
+  cut(c_ind$AGE, breaks = c(-Inf, 19, 29, 49, 64, Inf),
+      labels = c(1:5),
+      right = T)
 
+table(c_ind$CD1_HTN, useNA = "ifany")
+table(c_ind$CD2_HTN, useNA = "ifany")
+sum(table(c_ind$CD2_HTN)[-1])
+
+sum(c_ind$AGE < 18, na.rm = T)
+
+(1687 + 9) / (3470 + 1687)
 
 nrow(c_ind %>% subset(is.na(CD2_HTN)) %>% subset(is.na(CD1_HTN) | CD1_HTN == 1) %>% subset(AGE > 18) )
 
@@ -30,6 +43,13 @@ HN22_ALL = read.csv("KNHANES 2022/hn22_all.txt")
 HN22_ALL$DI1_ag_group <- 
   cut(HN22_ALL$DI1_ag, breaks = c(-Inf, 19, 29, 49, 64, 887, 888, 999),
       labels = c(1:5, 888, 999),
+      right = T)
+
+# table(HN22_ALL$age, useNA = "always")
+
+HN22_ALL$age_group <- 
+  cut(HN22_ALL$age, breaks = c(-Inf, 19, 29, 49, 64, Inf),
+      labels = c(1:5),
       right = T)
 
 HN22_ALL$region_sex <- interaction(
@@ -131,8 +151,21 @@ for (i in seq_along(calibrations)) {
     data = c_ind_new
   )
   
-  res_tmp = unclass(svytotal(~factor(CD2_HTN), design = survey_design0, na.rm=T))
-  res_tmp = data.frame(cbind(total = res_tmp, SE = sqrt(diag(attr(res_tmp, "var"))))[-1,])
+  # res_tmp = unclass(svytotal(~factor(CD2_HTN), design = survey_design0, na.rm=T))
+  # res_tmp = data.frame(cbind(total = res_tmp, SE = sqrt(diag(attr(res_tmp, "var"))))[-1,])
+  
+  Res_tmp = unclass(svytotal(~factor(CD1_HTN), design = survey_design0, na.rm=T))
+  Res_tmp = cbind(total = Res_tmp, SE = sqrt(diag(attr(Res_tmp, "var"))))
+  
+  res_tmp = unclass(svyby(
+    ~(CD1_HTN == 1), 
+    ~SEX, 
+    design = survey_design0, 
+    svytotal, 
+    na.rm = TRUE
+  ))
+  res_tmp = data.frame(rbind(sapply(res_tmp, cbind)[,c(3,5)], Res_tmp[1, ]))
+  names(res_tmp) <- c("total", "SE")
   
   assign(
     res_names[i],
@@ -141,29 +174,68 @@ for (i in seq_along(calibrations)) {
   
 }
 
-svytotal(~factor(CD1_HTN), design = survey_design_c_ind, na.rm=T)
+# svytotal(~factor(CD1_HTN), design = survey_design_c_ind, na.rm=T) # Naive
+# 
+# svytotal(~factor(CD1_HTN), design = survey_design0, na.rm=T) # GEC
+# 
+# svytotal(~factor(DI1_dg), design = survey_design, na.rm=T) # HT
 
-svytotal(~factor(CD1_HTN), design = survey_design0, na.rm=T)
+Res1 = unclass(svytotal(~factor(CD1_HTN), design = survey_design_c_ind, na.rm=T)) # Naive
+Res1 = cbind(total = Res1, SE = sqrt(diag(attr(Res1, "var"))))
 
-svytotal(~as.factor(DI1_dg), design = survey_design, na.rm=T)
+Res2 = unclass(svytotal(~as.factor(DI1_dg), design = survey_design, na.rm=T)) # HT
+Res2 = cbind(total = Res2, SE = sqrt(diag(attr(Res2, "var"))))[c(2, 1),]
 
-unlist(svytotal(~factor(CD2_HTN), design = survey_design_c_ind, na.rm=T))
+Res3 = unclass(svytotal(~factor(CD1_HTN), design = survey_design0, na.rm=T)) # GEC
+Res3 = cbind(total = Res3, SE = sqrt(diag(attr(Res3, "var"))))
 
-res1 = unclass(svytotal(~factor(CD2_HTN), design = survey_design_c_ind, na.rm=T))
-res1 = data.frame(cbind(total = res1, SE = sqrt(diag(attr(res1, "var"))))[-1,])
+# Domain estimation
+res1 = unclass(svyby(
+  ~(CD1_HTN == 1), 
+  ~SEX, 
+  design = survey_design_c_ind, 
+  svytotal, 
+  na.rm = TRUE
+))
+res1 = data.frame(rbind(sapply(res1, cbind)[,c(3,5)], Res1[1, ]))
 
-res2 = unclass(svytotal(~as.factor(DI1_ag_group), design = survey_design, na.rm=T))
-res2 = data.frame(cbind(total = res2, SE = sqrt(diag(attr(res2, "var"))))[c(-6, -7),])
+res2 = unclass(svyby(
+  ~(DI1_dg == 1), 
+  ~sex, 
+  design = survey_design, 
+  svytotal, 
+  na.rm = TRUE
+))
+res2 = data.frame(rbind(sapply(res2, cbind)[,c(3,5)], Res2[1, ]))
 
-res3 = unclass(svytotal(~factor(CD2_HTN), design = survey_design0, na.rm=T))
-res3 = data.frame(cbind(total = res3, SE = sqrt(diag(attr(res3, "var"))))[-1,])
+res3 = unclass(svyby(
+  ~(CD1_HTN == 1), 
+  ~SEX, 
+  design = survey_design0, 
+  svytotal, 
+  na.rm = TRUE
+))
+res3 = data.frame(rbind(sapply(res3, cbind)[,c(3,5)], Res3[1, ]))
+
+names(res1) <- names(res2) <- names(res3) <- c("total", "SE")
+
+# unlist(svytotal(~factor(CD2_HTN), design = survey_design_c_ind, na.rm=T))
+
+# res1 = unclass(svytotal(~factor(CD2_HTN), design = survey_design_c_ind, na.rm=T)) # Naive
+# res1 = data.frame(cbind(total = res1, SE = sqrt(diag(attr(res1, "var"))))[-1,])
+# 
+# res2 = unclass(svytotal(~as.factor(DI1_ag_group), design = survey_design, na.rm=T)) # HT
+# res2 = data.frame(cbind(total = res2, SE = sqrt(diag(attr(res2, "var"))))[c(-6, -7),])
+# 
+# res3 = unclass(svytotal(~factor(CD2_HTN), design = survey_design0, na.rm=T)) # GEC
+# res3 = data.frame(cbind(total = res3, SE = sqrt(diag(attr(res3, "var"))))[-1,])
 
 
 row.names(res1) <- row.names(res2) <- row.names(res3) <- NULL
 
 # xtable::xtable(cbind(res1, res2, res3) / 1e3, digits = 0)
 
-xtable::xtable(cbind(res1, res2, res_ET, res_HD, res_SL, res_CE) / 1e3, digits = 0)
+xtable::xtable(cbind(res1, res2, res_ET, res_HD, res_CE) / 1e6, digits = 2)
 
 # # Plotting
 # par(mfrow = c(5, 1), mar = c(4, 4, 2, 2)) # Set 5 rows, 1 column layout
@@ -188,12 +260,18 @@ xtable::xtable(cbind(res1, res2, res_ET, res_HD, res_SL, res_CE) / 1e3, digits =
 # }
 
 
+
 library(ggplot2)
 
-resnames<- c("Naive", "HT", "KL", "HD", "SL", "SKL")
+resnames<- c("Naive", "HT", "KL", "HD", "SKL")
 
-Rows <- c("19 years old and below", "20–29 years old", "30–49 years old",
-          "50–64 years old", "65 years old and above")
+# Rows <- c("19 years old and below", "20–29 years old", "30–49 years old",
+#           "50–64 years old", "65 years old and above")
+
+# Rows <- c("20–29 years old", "30–49 years old",
+#           "50–64 years old", "65 years old and above")
+
+Rows <- c("Male", "Female", "Total")
 
 
 # Create a combined data frame
@@ -202,8 +280,8 @@ data <- bind_rows(
   res2 %>% mutate(Label = resnames[2], Row = Rows),
   res_ET %>% mutate(Label = resnames[3], Row = Rows),
   res_HD %>% mutate(Label = resnames[4], Row = Rows),
-  res_SL %>% mutate(Label = resnames[5], Row = Rows),
-  res_CE %>% mutate(Label = resnames[6], Row = Rows)
+  # res_SL %>% mutate(Label = resnames[5], Row = Rows),
+  res_CE %>% mutate(Label = resnames[5], Row = Rows)
 )
 
 # Calculate lower and upper bounds for CIs
@@ -220,8 +298,8 @@ ggplot(data, aes(x = total, y = Label, color = Label)) +
   geom_errorbarh(aes(xmin = Lower, xmax = Upper), height = 0.2, size = 0.7) + # Thinner error bars
   facet_wrap(~ Row, ncol = 1, scales = "free_x", strip.position = "top") + # Allow free x-scales
   # scale_color_manual(values = c("black", "darkgray", "lightgray")) + # Grayscale color scheme
-  scale_color_manual(values = c("black", "gray20", "gray40", "gray60", "gray70", "gray80")) + # Grayscale color scheme
-  labs(x = "Estimated Total", y = "", title = "") + # Simplified axis titles
+  scale_color_manual(values = c("black", "gray40", "gray60", "gray70", "gray80")) + # Grayscale color scheme
+  labs(x = "", y = "", title = "") + # Simplified axis titles
   theme_minimal(base_size = 12) + # Smaller base size for journal style
   theme(
     strip.text = element_text(size = 10, face = "bold", hjust = 0.5), # Centered and bold strip text
