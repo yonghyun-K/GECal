@@ -178,12 +178,12 @@ for (i in seq_along(calibrations)) {
 # 
 # svytotal(~factor(CD1_HTN), design = survey_design0, na.rm=T) # GEC
 # 
-# svytotal(~factor(DI1_dg), design = survey_design, na.rm=T) # HT
+# svytotal(~factor(DI1_pr), design = survey_design, na.rm=T) # HT
 
 Res1 = unclass(svytotal(~factor(CD1_HTN), design = survey_design_c_ind, na.rm=T)) # Naive
 Res1 = cbind(total = Res1, SE = sqrt(diag(attr(Res1, "var"))))
 
-Res2 = unclass(svytotal(~as.factor(DI1_dg), design = survey_design, na.rm=T)) # HT
+Res2 = unclass(svytotal(~as.factor(DI1_pr), design = survey_design, na.rm=T)) # HT
 Res2 = cbind(total = Res2, SE = sqrt(diag(attr(Res2, "var"))))[c(2, 1),]
 
 Res3 = unclass(svytotal(~factor(CD1_HTN), design = survey_design0, na.rm=T)) # GEC
@@ -200,7 +200,7 @@ res1 = unclass(svyby(
 res1 = data.frame(rbind(sapply(res1, cbind)[,c(3,5)], Res1[1, ]))
 
 res2 = unclass(svyby(
-  ~(DI1_dg == 1), 
+  ~(DI1_pr == 1), 
   ~sex, 
   design = survey_design, 
   svytotal, 
