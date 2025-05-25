@@ -6,7 +6,7 @@
 if (!interactive()) {
   args <- as.numeric(commandArgs(trailingOnly = TRUE))
 } else{
-  args <- c(5)
+  args <- c(500)
 }
 
 timenow1 = Sys.time()
@@ -44,8 +44,8 @@ registerDoParallel(cl)
 # summary(smho98)
 # summary(smho.N874)
 
-# nhis = read.csv("C:/Users/ghkfk/Box/Data/NHIS2021/NHIS_2021.CSV")
-nhis = read.csv("C:/Users/User/Box/Data/NHIS2021/NHIS_2021.CSV")
+nhis = read.csv("C:/Users/ghkfk/Box/Data/NHIS2021/NHIS_2021.CSV")
+# nhis = read.csv("C:/Users/User/Box/Data/NHIS2021/NHIS_2021.CSV")
 # nhis = read.csv("/Users/yhkwon/Library/CloudStorage/Box-Box/Data/NHIS2021/NHIS_2021.CSV")
 
 names(nhis)[names(nhis) == "Height"] <- "HT"
@@ -94,7 +94,7 @@ nhis$Smoking <- ifelse(nhis$Smoking == 3, 1, 0)
 
 # summary(nhis)
 
-# nhis$Hemo <- nhis$OralExam  # Variable of interest y is Smoking
+nhis$Hemo <- nhis$OralExam  # Variable of interest y is Smoking
 
 theta = mean(nhis$Hemo)
 
@@ -188,7 +188,7 @@ final_res <- foreach(
   theta_res = NULL
   se_res = NULL
   
-  for(pimethod in 0:3){
+  for(pimethod in c(0,1,3)){
     if(pimethod == 0){
       pihat = pi
     }else if(pimethod == 1){
@@ -198,7 +198,6 @@ final_res <- foreach(
     }else if(pimethod == 3){
       pihat = 1 / w_S2
     }
-    pihat = ifelse(pihat > 0.65, 0.65, pihat) # To make CE convergent
     d_S <- 1 / pihat[index]
   
   # #HT estimator
@@ -273,6 +272,8 @@ final_res <- foreach(
   # vhat = predict.glm(Vmodel_d, smho98, type = "response")
   
   for (entropy in list(-1, -1/2, 1, "CE")) {
+    # if(entropy == "CE") pihat = ifelse(pihat > 0.5, 0.5, pihat) # To make CE convergent
+    d_S <- 1 / pihat[index]
     # const = colSums(model.matrix(fortmp, nhis))
     # 
     # calibration <- GEcalib(
@@ -353,7 +354,7 @@ res <- cbind(BIAS, SE, RMSE)
 rownames(res) = names(final_res1[[1]])
 res
 
-xtable(res * 1e2, digits = 3)
+xtable(res * 1e2, digits = 2)
 
 colSums(is.na(tmpres))
 
@@ -367,9 +368,9 @@ final_res3 = final_res3[sapply(final_res3, function(x) is.numeric(unlist(x)))]
 tmpres3 = do.call(rbind, lapply(final_res3, c))
 
 res2 = cbind(RB = (colMeans(tmpres2^2, na.rm = TRUE) - SE^2) / SE^2, 
-             CR = colMeans(tmpres3, na.rm = TRUE))
+             CR = colMeans(tmpres3, na.rm = TRUE) * 1e2)
 
-# xtable(res2 * 1e2)
+xtable(res2)
 
 # hist(g(1 / pi, entropy = -1))
 # hist(g(1 / pi, entropy = 0))
