@@ -6,7 +6,7 @@
 if (!interactive()) {
   args <- as.numeric(commandArgs(trailingOnly = TRUE))
 } else{
-  args <- c(500)
+  args <- c(5)
 }
 
 timenow1 = Sys.time()
@@ -45,8 +45,8 @@ registerDoParallel(cl)
 # summary(smho.N874)
 
 # nhis = read.csv("C:/Users/ghkfk/Box/Data/NHIS2021/NHIS_2021.CSV")
-# nhis = read.csv("C:/Users/User/Box/Data/NHIS2021/NHIS_2021.CSV")
-nhis = read.csv("/Users/yhkwon/Library/CloudStorage/Box-Box/Data/NHIS2021/NHIS_2021.CSV")
+nhis = read.csv("C:/Users/User/Box/Data/NHIS2021/NHIS_2021.CSV")
+# nhis = read.csv("/Users/yhkwon/Library/CloudStorage/Box-Box/Data/NHIS2021/NHIS_2021.CSV")
 
 names(nhis)[names(nhis) == "Height"] <- "HT"
 names(nhis)[names(nhis) == "Weight"] <- "WT"
@@ -81,8 +81,11 @@ nhis <- impute_by_sampling(nhis)
 
 smp.size <- 1000
 
-tab1 = round(table(nhis$AgeGroup, nhis$REGION1, nhis$SEX) / N * smp.size)
-tab1 = ifelse(tab1 < 1, 1, tab1)
+tab1 = table(nhis$AgeGroup, nhis$REGION1, nhis$SEX)
+tab1 = ifelse(tab1 > 15, 5, round(tab1 / 3))
+
+# tab1 = round(table(nhis$AgeGroup, nhis$REGION1, nhis$SEX) / N * smp.size)
+# tab1 = ifelse(tab1 < 1, 1, tab1)
 # tab1 = ifelse(table(nhis$AgeGroup, nhis$REGION1, nhis$SEX) == 0, 0, tab1)
 
 n = sum(tab1)
@@ -117,6 +120,7 @@ final_res <- foreach(
       }
     }
   }
+  # summary(pi)
   
   delta = as.integer(1:N %in% index)
   Rmodel = glm(delta ~ AgeGroup + REGION1 + SEX, family = binomial,
@@ -194,7 +198,7 @@ final_res <- foreach(
     }else if(pimethod == 3){
       pihat = 1 / w_S2
     }
-    
+    pihat = ifelse(pihat > 0.65, 0.65, pihat) # To make CE convergent
     d_S <- 1 / pihat[index]
   
   # #HT estimator
