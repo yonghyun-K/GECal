@@ -6,7 +6,7 @@
 if (!interactive()) {
   args <- as.numeric(commandArgs(trailingOnly = TRUE))
 } else{
-  args <- c(500)
+  args <- c(5)
 }
 
 timenow1 = Sys.time()
@@ -272,7 +272,7 @@ final_res <- foreach(
   # vhat = predict.glm(Vmodel_d, smho98, type = "response")
   
   for (entropy in list(-1, -1/2, 1, "CE")) {
-    # if(entropy == "CE") pihat = ifelse(pihat > 0.5, 0.5, pihat) # To make CE convergent
+    if(entropy == "CE") pihat = ifelse(pihat > 0.65, 0.65, pihat) # To make CE convergent
     d_S <- 1 / pihat[index]
     # const = colSums(model.matrix(fortmp, nhis))
     # 
