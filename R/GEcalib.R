@@ -72,7 +72,7 @@
 #' when \code{K_alpha == "log"}.
 #' 
 #' If \code{method == "GEC0"}, \code{GEcalib} minimizes the negative adjusted entropy:
-#' \deqn{\sum_{i \in A} q_iG(\phi_i\omega_i) - q_i\phi_i\omega_i g(\phi_i \omega_i)}
+#' \deqn{\sum_{i \in A} q_iG(\phi_i\omega_i) - q_i\phi_i\omega_i g(\phi_i d_i)}
 #' with respect to \eqn{\bm \omega} subject to the calibration constraints \eqn{\sum_{i \in A} \omega_i \bm{x}_i = \sum_{i \in U} \bm{x}_i}.
 #' 
 #' If \code{method == "DS"}, \code{GEcalib} minimizes the divergence between \eqn{\bm \omega} and \eqn{\bm d}:
