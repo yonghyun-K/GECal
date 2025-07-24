@@ -50,7 +50,13 @@ to the finite population correction (\eqn{fpc = n / N}).}
 
 \item{is.total}{Logical, \code{TRUE} if \code{sum(const[1])} equals the population size.}
 
-\item{del}{The optional threshold (\eqn{\delta}) used when Pseudo-Huber (PH) entropy is selected.
+\item{del}{The optional threshold (\eqn{\delta}) used when Pseudo-Huber (PH) entropy is selected.}
+
+\item{xtol}{Optional relative steplength tolerance in nleqslv}
+
+\item{maxit}{Optional maximum number of major iterations in nleqslv}
+
+\item{allowSingular}{Optional logical value indicating if a small correction to the Jacobian is allowed in nleqslv
 \code{del = quantile(dweight, 0.75)} if not specified.}
 }
 \value{

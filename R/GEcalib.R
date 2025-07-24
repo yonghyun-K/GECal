@@ -32,6 +32,9 @@
 #' \eqn{g(d_i)} is not available. \code{K_alpha} can be \code{NULL}, \code{"log"}, or custom functions. See "Details".  
 #' @param is.total Logical, \code{TRUE} if \code{sum(const[1])} equals the population size.
 #' @param del The optional threshold (\eqn{\delta}) used when Pseudo-Huber (PH) entropy is selected.
+#' @param xtol Optional relative steplength tolerance in nleqslv
+#' @param maxit Optional maximum number of major iterations in nleqslv
+#' @param allowSingular Optional logical value indicating if a small correction to the Jacobian is allowed in nleqslv
 #' \code{del = quantile(dweight, 0.75)} if not specified.
 #' 
 #' @return A list of class \code{calibration} including the calibration weights 
