@@ -75,12 +75,13 @@ estimate <- function(formula, data = NULL, calibration, pimat = NULL){
   
   response_vars <- all.vars(formula[[2]])
   
-  environment(formula) <- environment()
+  formula2 = reformulate(termlabels = response_vars, response = NULL)
+  environment(formula2) <- environment()
   
   if (is.null(data)) {
-    mf <- model.frame(formula, parent.frame())  # Evaluate in parent environment
+    mf <- model.frame(formula2, parent.frame())  # Evaluate in parent environment
   } else {
-    mf <- model.frame(formula, data)  # Evaluate in the provided data
+    mf <- model.frame(formula2, data)  # Evaluate in the provided data
   }
   
   ys <- as.matrix.data.frame(mf[,response_vars, drop = FALSE])
@@ -120,7 +121,7 @@ estimate <- function(formula, data = NULL, calibration, pimat = NULL){
   } 
   
   if(length(const) == 0){
-    yhat = rep(0, length(ys))
+    yhat <- array(0, dim = dim(ys))
   }else{
     if(method == "DS"){
       gammahat = solve(t(Xs) %*% (Xs * dweight / G.scale),
@@ -151,12 +152,12 @@ estimate <- function(formula, data = NULL, calibration, pimat = NULL){
     yhat = drop(Xs %*% gammahat)
   }
   
-
-
-  Varhat = drop(t(ys - yhat) %*% pimat %*% (ys - yhat))
-
+  
+  
+  Varhat = t(ys - yhat) %*% pimat %*% (ys - yhat)
+  
   res_list <- list(cov = Varhat,
-                   estimate = cbind("Estimate" = colSums(ys * w), "Std. Error" = drop(sqrt(diag(Varhat, nrow = ncol(ys))))))
+                   estimate = cbind("Estimate" = colSums(ys * w), "Std. Error" = drop(sqrt(diag(Varhat)))))
   
   class(res_list) <- "estimation"
   return(res_list)
