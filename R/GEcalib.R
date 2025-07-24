@@ -11,7 +11,7 @@
 #' and \eqn{d_i} is the design weight for each sampled unit \eqn{i \in A}.
 #' 
 #' @import nleqslv
-#' @importFrom stats model.frame model.matrix nlm quantile
+#' @importFrom stats model.frame model.matrix nlm quantile reformulate
 #' 
 #' @param formula An object of class "formula" specifying the calibration model. 
 #' @param dweight A vector of sampling weights.
