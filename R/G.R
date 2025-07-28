@@ -17,7 +17,7 @@
 #' pi = pt((-x[,1] / 2 - x[,2] / 2), 3);
 #' pi = ifelse(pi >.7, .7, pi)
 #' 
-#' g_EL <- g(1 / pi, entropy = 1)
+#' g_SL <- g(1 / pi, entropy = 1)
 #' g_ET <- g(1 / pi, entropy = 0)
 #' g_EL <- g(1 / pi, entropy = -1)
 #' 
